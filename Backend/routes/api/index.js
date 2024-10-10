@@ -1,14 +1,9 @@
 // backend/routes/api/index.js
 const router = require('express').Router();
+const { setTokenCookie, restoreUser, requireAuth } = require('../../utils/auth');
+const { User } = require('../../db/models');
 
-// backend/routes/api/index.js
-// ...
+// You can now add your actual API routes here as you progress
 
-router.post('/test', function(req, res) {
-    res.json({ requestBody: req.body });
-  });
-  
-  // ...
-  
+
 module.exports = router;
-

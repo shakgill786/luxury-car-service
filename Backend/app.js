@@ -1,5 +1,3 @@
-// backend/app.js
-
 const express = require('express');
 require('express-async-errors'); // For handling async route errors
 const morgan = require('morgan'); // For logging HTTP requests
@@ -47,8 +45,8 @@ app.use(
 );
 
 // Import routes and apply them to the app
-const routes = require('./routes');
-app.use(routes);
+const routes = require('./routes');  // Import the routes file
+app.use(routes);  // Use the imported routes
 
 // Catch unhandled requests and forward to error handler.
 app.use((_req, _res, next) => {
@@ -59,14 +57,11 @@ app.use((_req, _res, next) => {
   next(err);
 });
 
-// backend/app.js
-// ...
-
+// Import Sequelize ValidationError
 const { ValidationError } = require('sequelize');
 
 // Process Sequelize errors
 app.use((err, _req, _res, next) => {
-  // Check if the error is a Sequelize ValidationError
   if (err instanceof ValidationError) {
     let errors = {};
     for (let error of err.errors) {
@@ -77,9 +72,6 @@ app.use((err, _req, _res, next) => {
   }
   next(err);
 });
-
-// backend/app.js
-// ...
 
 // Error formatter
 app.use((err, _req, res, _next) => {
