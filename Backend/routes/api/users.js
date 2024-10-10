@@ -1,0 +1,88 @@
+// backend/routes/api/users.js
+const express = require('express');
+const router = express.Router();
+const bcrypt = require('bcryptjs'); // For password hashing
+const { User } = require('../../db/models'); // Import User model
+const { Sequelize } = require('../../db/models');
+const { setTokenCookie } = require('../../utils/auth'); // Helper to set cookie
+
+
+// POST /api/users/signup
+router.post('/signup', async (req, res, next) => {
+    const { username, email, password } = req.body;
+
+    // Hash the password before storing it in the database
+    const hashedPassword = bcrypt.hashSync(password);
+
+    // Create new user
+    try {
+        const newUser = await User.create({
+            username,
+            email,
+            hashedPassword
+        });
+
+        // Set the token cookie after successful signup
+        setTokenCookie(res, newUser);
+
+        // Return user data (without sensitive info)
+        return res.json({
+            user: {
+                id: newUser.id,
+                username: newUser.username,
+                email: newUser.email
+            }
+        });
+    } catch (err) {
+        // If there's a validation or uniqueness error, forward it to the error handler
+        err.status = 400;
+        return next(err);
+    }
+});
+
+router.post('/login', async (req, res, next) => {
+    console.log('Login request body:', req.body);  // Log request body
+  
+    const { credential, password } = req.body;
+  
+    // Find user by email or username
+    const user = await User.findOne({
+      where: {
+        [Sequelize.Op.or]: { email: credential, username: credential }
+      }
+    });
+  
+    if (!user) {
+      console.log('User not found');
+      const err = new Error('Login failed');
+      err.status = 401;
+      return next(err);
+    }
+  
+    console.log('User found:', user.username);
+  
+    // Check password
+    const isPasswordMatch = bcrypt.compareSync(password, user.hashedPassword.toString());
+    if (!isPasswordMatch) {
+      console.log('Password mismatch');
+      const err = new Error('Login failed');
+      err.status = 401;
+      return next(err);
+    }
+  
+    console.log('Password match, login successful');
+  
+    // Set token cookie after successful login
+    setTokenCookie(res, user);
+  
+    // Return user data (without sensitive info)
+    return res.json({
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email
+      }
+    });
+  });
+  
+module.exports = router;

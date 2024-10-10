@@ -15,7 +15,6 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // Route to restore CSRF token (development only)
-if (process.env.NODE_ENV !== 'production') {
   router.get("/api/csrf/restore", (req, res) => {
     const csrfToken = req.csrfToken();
     res.cookie("XSRF-TOKEN", csrfToken);
@@ -23,6 +22,6 @@ if (process.env.NODE_ENV !== 'production') {
       'XSRF-Token': csrfToken
     });
   });
-}
+
 
 module.exports = router;
