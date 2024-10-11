@@ -54,7 +54,6 @@ router.post(
   }
 );
 
-  
 
 router.post('/login', async (req, res, next) => {
     console.log('Login request body:', req.body);  // Log request body
