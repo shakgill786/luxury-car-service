@@ -14,14 +14,21 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
+// Root Route - handles GET requests to "/"
+router.get('/', (req, res) => {
+  res.send('Welcome to the Luxury Car Service API!'); // Customize this message
+});
+
 // Route to restore CSRF token (development only)
-  router.get("/api/csrf/restore", (req, res) => {
-    const csrfToken = req.csrfToken();
-    res.cookie("XSRF-TOKEN", csrfToken);
-    res.status(200).json({
-      'XSRF-Token': csrfToken
-    });
+router.get("/api/csrf/restore", (req, res) => {
+  console.log("CSRF route hit");  // Add this log for debugging
+  const csrfToken = req.csrfToken();
+  res.cookie("XSRF-TOKEN", csrfToken);
+  res.status(200).json({
+    'XSRF-Token': csrfToken
   });
+});
+
 
 
 module.exports = router;
