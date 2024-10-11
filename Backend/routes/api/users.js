@@ -5,40 +5,56 @@ const bcrypt = require('bcryptjs'); // For password hashing
 const { User } = require('../../db/models'); // Import User model
 const { Sequelize } = require('../../db/models');
 const { setTokenCookie } = require('../../utils/auth'); // Helper to set cookie
+const { check } = require('express-validator');
+const { handleValidationErrors } = require('../../utils/validation');
 
 
-// POST /api/users/signup
-router.post('/signup', async (req, res, next) => {
-    const { username, email, password } = req.body;
+const validateSignup = [
+    check('email')
+      .exists({ checkFalsy: true })
+      .isEmail()
+      .withMessage('Please provide a valid email.'),
+    check('username')
+      .exists({ checkFalsy: true })
+      .isLength({ min: 4 })
+      .withMessage('Please provide a username with at least 4 characters.'),
+    check('username')
+      .not()
+      .isEmail()
+      .withMessage('Username cannot be an email.'),
+    check('password')
+      .exists({ checkFalsy: true })
+      .isLength({ min: 6 })
+      .withMessage('Password must be 6 characters or more.'),
+    handleValidationErrors
+  ];
 
-    // Hash the password before storing it in the database
+
+
+// Sign up route
+router.post(
+  '/',
+  validateSignup,  // Add the validation middleware here
+  async (req, res) => {
+    const { email, password, username } = req.body;
     const hashedPassword = bcrypt.hashSync(password);
+    const user = await User.create({ email, username, hashedPassword });
 
-    // Create new user
-    try {
-        const newUser = await User.create({
-            username,
-            email,
-            hashedPassword
-        });
+    const safeUser = {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+    };
 
-        // Set the token cookie after successful signup
-        setTokenCookie(res, newUser);
+    await setTokenCookie(res, safeUser);
 
-        // Return user data (without sensitive info)
-        return res.json({
-            user: {
-                id: newUser.id,
-                username: newUser.username,
-                email: newUser.email
-            }
-        });
-    } catch (err) {
-        // If there's a validation or uniqueness error, forward it to the error handler
-        err.status = 400;
-        return next(err);
-    }
-});
+    return res.json({
+      user: safeUser
+    });
+  }
+);
+
+  
 
 router.post('/login', async (req, res, next) => {
     console.log('Login request body:', req.body);  // Log request body
