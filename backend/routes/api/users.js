@@ -2,8 +2,8 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs'); // For password hashing
-const { User } = require('../../db/models'); // Import User model
-const { Sequelize } = require('../../db/models');
+const { User } = require('../../../backend/db/models'); // Import User model
+const { Sequelize } = require('../../../backend/db/models');
 const { setTokenCookie } = require('../../utils/auth'); // Helper to set cookie
 const { check } = require('express-validator');
 const { handleValidationErrors } = require('../../utils/validation');

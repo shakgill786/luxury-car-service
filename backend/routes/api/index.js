@@ -1,10 +1,10 @@
 const router = require("express").Router();
 const { setTokenCookie, restoreUser, requireAuth } = require('../../utils/auth.js');
-const { User } = require('../../db/models');
+const { User } = require('../../../backend/db/models/index.js');
 const csrf = require('csurf');
 const csrfProtection = csrf({ cookie: true });
 const sessionRouter = require('./session.js');
-const usersRouter = require('./users'); // Import the users routes
+const usersRouter = require('./users.js'); // Import the users routes
 
 router.use('/session', sessionRouter); // handles login and logout
 router.use('/users', usersRouter); // Use the users routes for /api/users

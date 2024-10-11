@@ -7,7 +7,7 @@ const helmet = require('helmet'); // Security middleware
 const cookieParser = require('cookie-parser'); // To parse cookies
 
 // Import the config file
-const { environment } = require('./config');
+const { environment } = require('../backend/config');
 const isProduction = environment === 'production';
 
 // Initialize the express app
@@ -45,7 +45,7 @@ app.use(
 );
 
 // Import routes and apply them to the app
-const routes = require('./routes');  // Import the routes file
+const routes = require('../backend/routes');  // Import the routes file
 app.use(routes);  // Use the imported routes
 
 // Catch unhandled requests and forward to error handler.
