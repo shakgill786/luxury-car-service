@@ -84,5 +84,36 @@ router.post('/login', async (req, res, next) => {
       }
     });
   });
+
+
+
+// Sign up
+router.post(
+    '/',
+    async (req, res) => {
+      const { email, password, username } = req.body;
+      
+      // Hash the password
+      const hashedPassword = bcrypt.hashSync(password);
+      
+      // Create the new user in the database
+      const user = await User.create({ email, username, hashedPassword });
   
+      // Remove sensitive information before returning the user
+      const safeUser = {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+      };
+  
+      // Set the token cookie
+      await setTokenCookie(res, safeUser);
+  
+      // Return the newly created user
+      return res.json({
+        user: safeUser
+      });
+    }
+  );
+
 module.exports = router;

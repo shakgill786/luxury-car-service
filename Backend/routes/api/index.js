@@ -3,7 +3,10 @@ const { setTokenCookie, restoreUser, requireAuth } = require('../../utils/auth.j
 const { User } = require('../../db/models');
 const csrf = require('csurf');
 const csrfProtection = csrf({ cookie: true });
+const sessionRouter = require('./session.js');
 const usersRouter = require('./users'); // Import the users routes
+
+router.use('/session', sessionRouter); // handles login and logout
 router.use('/users', usersRouter); // Use the users routes for /api/users
 
 
