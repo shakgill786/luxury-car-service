@@ -1,74 +1,9 @@
 # Luxury Car Services
 
 ## Database Schema Design
+![db-schema]
 
-### Users
-| Column      | Data Type | Constraints                                         |
-|-------------|-----------|-----------------------------------------------------|
-| id          | INTEGER   | PRIMARY KEY, AUTO_INCREMENT                         |
-| firstName   | VARCHAR   | NOT NULL                                            |
-| lastName    | VARCHAR   | NOT NULL                                            |
-| email       | VARCHAR   | NOT NULL, UNIQUE                                    |
-| username    | VARCHAR   | NOT NULL, UNIQUE                                    |
-| password    | VARCHAR   | NOT NULL                                            |
-| createdAt   | DATETIME  | DEFAULT CURRENT_TIMESTAMP                           |
-| updatedAt   | DATETIME  | DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP|
-
-### Cars
-| Column       | Data Type | Constraints                                         |
-|--------------|-----------|-----------------------------------------------------|
-| id           | INTEGER   | PRIMARY KEY, AUTO_INCREMENT                         |
-| ownerId      | INTEGER   | FOREIGN KEY REFERENCES Users(id), NOT NULL          |
-| make         | VARCHAR   | NOT NULL                                            |
-| model        | VARCHAR   | NOT NULL                                            |
-| year         | INTEGER   | NOT NULL                                            |
-| pricePerDay  | DECIMAL   | NOT NULL                                            |
-| description  | TEXT      | NOT NULL                                            |
-| location     | VARCHAR   | NOT NULL                                            |
-| createdAt    | DATETIME  | DEFAULT CURRENT_TIMESTAMP                           |
-| updatedAt    | DATETIME  | DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP|
-
-### CarImages
-| Column  | Data Type | Constraints                                         |
-|---------|-----------|-----------------------------------------------------|
-| id      | INTEGER   | PRIMARY KEY, AUTO_INCREMENT                         |
-| carId   | INTEGER   | FOREIGN KEY REFERENCES Cars(id), NOT NULL           |
-| url     | VARCHAR   | NOT NULL                                            |
-| preview | BOOLEAN   | DEFAULT FALSE                                       |
-| createdAt | DATETIME | DEFAULT CURRENT_TIMESTAMP                           |
-| updatedAt | DATETIME | DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP|
-
-### Reviews
-| Column   | Data Type | Constraints                                         |
-|----------|-----------|-----------------------------------------------------|
-| id       | INTEGER   | PRIMARY KEY, AUTO_INCREMENT                         |
-| userId   | INTEGER   | FOREIGN KEY REFERENCES Users(id), NOT NULL          |
-| carId    | INTEGER   | FOREIGN KEY REFERENCES Cars(id), NOT NULL           |
-| review   | TEXT      | NOT NULL                                            |
-| stars    | INTEGER   | NOT NULL, CHECK (stars BETWEEN 1 AND 5)             |
-| createdAt | DATETIME  | DEFAULT CURRENT_TIMESTAMP                           |
-| updatedAt | DATETIME  | DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP|
-
-### ReviewImages
-| Column    | Data Type | Constraints                                         |
-|-----------|-----------|-----------------------------------------------------|
-| id        | INTEGER   | PRIMARY KEY, AUTO_INCREMENT                         |
-| reviewId  | INTEGER   | FOREIGN KEY REFERENCES Reviews(id), NOT NULL        |
-| url       | VARCHAR   | NOT NULL                                            |
-| createdAt | DATETIME  | DEFAULT CURRENT_TIMESTAMP                           |
-| updatedAt | DATETIME  | DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP|
-
-### Bookings
-| Column    | Data Type | Constraints                                         |
-|-----------|-----------|-----------------------------------------------------|
-| id        | INTEGER   | PRIMARY KEY, AUTO_INCREMENT                         |
-| carId     | INTEGER   | FOREIGN KEY REFERENCES Cars(id), NOT NULL           |
-| userId    | INTEGER   | FOREIGN KEY REFERENCES Users(id), NOT NULL          |
-| startDate | DATE      | NOT NULL                                            |
-| endDate   | DATE      | NOT NULL                                            |
-| createdAt | DATETIME  | DEFAULT CURRENT_TIMESTAMP                           |
-| updatedAt | DATETIME  | DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP|
-
+[db-schema]: ./Images/db-schema.png
 ---
 
 ## API Documentation
@@ -1045,7 +980,7 @@ Return all the bookings that the current user has made.
 
 ### Get all Bookings for a Car based on the Car's id
 
-Return all the bookings for a spot specified by id.
+Return all the bookings for a Car specified by id.
 
 * Require Authentication: true
 * Request
@@ -1053,7 +988,7 @@ Return all the bookings for a spot specified by id.
   * Route path: /cars/:carId/bookings
   * Body: none
 
-* Successful Response: If you ARE NOT the owner of the spot.
+* Successful Response: If you ARE NOT the owner of the car.
   * Status Code: 200
   * Headers:
     * Content-Type: application/json
@@ -1071,7 +1006,7 @@ Return all the bookings for a spot specified by id.
     }
     ```
 
-* Successful Response: If you ARE the owner of the spot.
+* Successful Response: If you ARE the owner of the Car.
   * Status Code: 200
   * Headers:
     * Content-Type: application/json
