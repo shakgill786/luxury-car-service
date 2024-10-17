@@ -1,13 +1,13 @@
-const config = require('./index');
+const path = require('path');
 
 module.exports = {
   development: {
-    storage: config.dbFile,
-    dialect: "sqlite",
-    seederStorage: "sequelize",
+    storage: './dev.db', // Ensure the path is correct
+    dialect: 'sqlite',
+    seederStorage: 'sequelize',
     logQueryParameters: true,
     typeValidation: true,
-    logging: console.log
+    logging: console.log,
   },
   production: {
     use_env_variable: 'DATABASE_URL',
@@ -16,11 +16,11 @@ module.exports = {
     dialectOptions: {
       ssl: {
         require: true,
-        rejectUnauthorized: false
-      }
+        rejectUnauthorized: false,
+      },
     },
     define: {
-      schema: process.env.SCHEMA
-    }
-  }
+      schema: process.env.SCHEMA,
+    },
+  },
 };

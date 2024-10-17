@@ -5,7 +5,17 @@ const csrf = require('csurf');
 const csrfProtection = csrf({ cookie: true });
 const sessionRouter = require('./session.js');
 const usersRouter = require('./users.js'); // Import the users routes
+const spotsRouter = require('./spots');
+const reviewsRouter = require('./reviews');
+const bookingsRouter = require('./bookings');
+const imagesRouter = require('./images');   // Import the images router
 
+
+router.use(restoreUser); 
+router.use('/images', imagesRouter);
+router.use('/bookings', bookingsRouter);
+router.use('/reviews', reviewsRouter);
+router.use('/spots', spotsRouter);
 router.use('/session', sessionRouter); // handles login and logout
 router.use('/users', usersRouter); // Use the users routes for /api/users
 
@@ -20,8 +30,6 @@ router.get('/set-token-cookie', async (_req, res) => {
   return res.json({ user: user });
 });
 
-// Test restoring user
-router.use(restoreUser);
 
 router.get('/restore-user', (req, res) => {
   return res.json(req.user);
