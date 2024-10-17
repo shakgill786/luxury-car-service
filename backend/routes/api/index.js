@@ -4,11 +4,11 @@ const { User } = require('../../../backend/db/models/index.js');
 const csrf = require('csurf');
 const csrfProtection = csrf({ cookie: true });
 const sessionRouter = require('./session.js');
-const usersRouter = require('./users.js'); // Import the users routes
+const usersRouter = require('./users.js'); 
 const spotsRouter = require('./spots');
 const reviewsRouter = require('./reviews');
 const bookingsRouter = require('./bookings');
-const imagesRouter = require('./images');   // Import the images router
+const imagesRouter = require('./images');  
 
 
 router.use(restoreUser); 
@@ -18,6 +18,7 @@ router.use('/reviews', reviewsRouter);
 router.use('/spots', spotsRouter);
 router.use('/session', sessionRouter); // handles login and logout
 router.use('/users', usersRouter); // Use the users routes for /api/users
+router.use('/bookings', bookingsRouter); 
 
 
 

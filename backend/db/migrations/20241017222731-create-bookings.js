@@ -1,18 +1,13 @@
-// migrations/xxxx-create-reviews.js
+'use strict';
+
 module.exports = {
-  up: async (queryInterface, Sequelize) => {
-    await queryInterface.createTable('Reviews', {
+  async up(queryInterface, Sequelize) {
+    await queryInterface.createTable('Bookings', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER,
-      },
-      userId: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        references: { model: 'Users', key: 'id' },
-        onDelete: 'CASCADE',
       },
       spotId: {
         type: Sequelize.INTEGER,
@@ -20,12 +15,18 @@ module.exports = {
         references: { model: 'Spots', key: 'id' },
         onDelete: 'CASCADE',
       },
-      review: {
-        type: Sequelize.TEXT,
+      userId: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: { model: 'Users', key: 'id' },
+        onDelete: 'CASCADE',
+      },
+      startDate: {
+        type: Sequelize.DATEONLY,
         allowNull: false,
       },
-      stars: {
-        type: Sequelize.INTEGER,
+      endDate: {
+        type: Sequelize.DATEONLY,
         allowNull: false,
       },
       createdAt: {
@@ -41,7 +42,7 @@ module.exports = {
     });
   },
 
-  down: async (queryInterface, Sequelize) => {
-    await queryInterface.dropTable('Reviews');
+  async down(queryInterface, Sequelize) {
+    await queryInterface.dropTable('Bookings');
   },
 };

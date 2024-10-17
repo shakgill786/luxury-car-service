@@ -46,5 +46,15 @@ module.exports = (sequelize, DataTypes) => {
       modelName: 'User',
     }
   );
+  User.associate = (models) => {
+    // User can create multiple spots
+    User.hasMany(models.Spot, { foreignKey: 'ownerId', onDelete: 'CASCADE' });
+
+    // User can leave multiple reviews
+    User.hasMany(models.Review, { foreignKey: 'userId', onDelete: 'CASCADE' });
+
+    // User can have multiple bookings
+    User.hasMany(models.Booking, { foreignKey: 'userId', onDelete: 'CASCADE' });
+  };
   return User;
 };
