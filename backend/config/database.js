@@ -1,4 +1,3 @@
-const config = require('./index');
 module.exports = {
   development: {
     storage: config.dbFile,
@@ -14,11 +13,11 @@ module.exports = {
     dialectOptions: {
       ssl: {
         require: true,
-        rejectUnauthorized: false
-      }
+        rejectUnauthorized: false,
+      },
     },
     define: {
-      schema: process.env.SCHEMA
-    }
+      schema: process.env.SCHEMA || 'public',  // Fallback schema if not defined
+    },
   }
 };
