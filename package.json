@@ -4,12 +4,17 @@
   "scripts": {
     "install": "npm install --prefix backend",
     "start": "npm start --prefix backend",
-    "migrate": "npx sequelize-cli db:migrate --env production",
-    "seed": "npx sequelize-cli db:seed:all --env production",
+    "migrate": "npx sequelize-cli db:migrate --env production --cwd backend",
+    "seed": "npx sequelize-cli db:seed:all --env production --cwd backend",
     "build": "npm install && npm run migrate && npm run seed"
   },
   "engines": {
     "node": "18.x"
+  },
+  "dependencies": {
+    "sequelize": "^6.32.1",
+    "sequelize-cli": "^6.4.1",
+    "pg": "^8.11.0",
+    "pg-hstore": "^2.3.4"
   }
 }
-
