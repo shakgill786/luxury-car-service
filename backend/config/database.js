@@ -1,5 +1,3 @@
-const config = require('.');
-
 module.exports = {
   development: {
     storage: config.dbFile,  // SQLite for development
