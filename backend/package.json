@@ -4,16 +4,12 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "dev": "nodemon app.js",
-    "sequelize": "sequelize",
-    "migrate": "sequelize db:migrate",
-    "seed": "sequelize db:seed:all",
-    "rollback": "sequelize db:migrate:undo",
-    "start": "per-env",
-    "start:development": "nodemon ./bin/www",
-    "start:production": "node ./bin/www",
+    "start": "node ./bin/www",
     "build": "node psql-setup-script.js",
-    "dotenv": "dotenv -e .env -- node"
+    "sequelize": "sequelize",
+    "sequelize-cli": "sequelize-cli",
+    "migrate": "npx dotenv sequelize db:migrate",
+    "seed": "npx dotenv sequelize db:seed:all"
   },
   "keywords": [],
   "author": "",

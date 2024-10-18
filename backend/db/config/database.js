@@ -1,25 +1,25 @@
-const config = require('./index');  // Ensure the path is correct
+const config = require('../config');
 
 module.exports = {
   development: {
-    storage: config.dbFile,
+    storage: config.dbFile,  // SQLite for development
     dialect: "sqlite",
     seederStorage: "sequelize",
     logQueryParameters: true,
-    typeValidation: true,
+    typeValidation: true
   },
   production: {
-    use_env_variable: 'DATABASE_URL',
+    use_env_variable: 'DATABASE_URL',  // PostgreSQL in production
     dialect: 'postgres',
     seederStorage: 'sequelize',
     dialectOptions: {
       ssl: {
         require: true,
-        rejectUnauthorized: false,
-      },
+        rejectUnauthorized: false
+      }
     },
     define: {
-      schema: process.env.SCHEMA || 'public',  // Fallback schema if not defined
-    },
+      schema: process.env.SCHEMA
+    }
   }
 };
