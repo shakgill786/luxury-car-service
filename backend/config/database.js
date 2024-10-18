@@ -1,3 +1,5 @@
+const config = require('./index');  // Ensure the path is correct
+
 module.exports = {
   development: {
     storage: config.dbFile,
