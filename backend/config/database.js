@@ -1,6 +1,6 @@
 module.exports = {
   development: {
-    storage: './dev.db', // Correct path for SQLite
+    storage: './dev.db',
     dialect: 'sqlite',
     seederStorage: 'sequelize',
     logQueryParameters: true,
@@ -14,11 +14,8 @@ module.exports = {
     dialectOptions: {
       ssl: {
         require: true,
-        rejectUnauthorized: false, 
+        rejectUnauthorized: false,
       },
-    },
-    define: {
-      schema: process.env.SCHEMA || 'public', 
     },
   },
 };
