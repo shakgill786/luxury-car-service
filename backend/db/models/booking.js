@@ -23,6 +23,9 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DATEONLY,
       allowNull: false,
     },
+  }, 
+  {
+    schema: 'luxury_schema' // Corrected the placement of the schema option
   });
 
   Booking.associate = function (models) {
@@ -32,4 +35,3 @@ module.exports = (sequelize, DataTypes) => {
 
   return Booking;
 };
-

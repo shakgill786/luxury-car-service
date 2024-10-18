@@ -43,8 +43,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.FLOAT,
       allowNull: false,
     },
+  }, 
+  {
+    schema: 'luxury_schema' // Corrected the placement of the schema option
   });
-
   Spot.associate = (models) => {
     Spot.hasMany(models.Review, { foreignKey: 'spotId', onDelete: 'CASCADE' });
     Spot.hasMany(models.SpotImage, { foreignKey: 'spotId', onDelete: 'CASCADE' });

@@ -28,6 +28,9 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       validate: { min: 1, max: 5 },
     },
+  }, 
+  {
+    schema: 'luxury_schema' // Corrected the placement of the schema option
   });
 
   Review.associate = (models) => {

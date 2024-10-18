@@ -13,6 +13,9 @@ module.exports = (sequelize, DataTypes) => {
       references: { model: 'Reviews', key: 'id' },
       onDelete: 'CASCADE',
     },
+  }, 
+  {
+    schema: 'luxury_schema' // Corrected the placement of the schema option
   });
 
   ReviewImage.associate = (models) => {
