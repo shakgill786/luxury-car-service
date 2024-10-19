@@ -2,15 +2,10 @@
   "name": "luxurycarservices",
   "version": "1.0.0",
   "scripts": {
-    "install": "npm install --prefix backend",
+    "install": "npm --prefix backend install",
     "start": "npm start --prefix backend",
-    "migrate": "cd backend && npx sequelize-cli db:migrate --env production",
-    "seed": "cd backend && npx sequelize-cli db:seed:all --env production",
-    "rollback": "cd backend && npx sequelize-cli db:migrate:undo --env production",
-    "dev": "nodemon ./backend/bin/www",
-    "start:development": "nodemon ./backend/bin/www",
-    "start:production": "node ./backend/bin/www",
-    "build": "npm install && npm run migrate && npm run seed"
+    "build": "npm run migrate --prefix backend && npm run seed --prefix backend",
+    "sequelize": "npm run sequelize --prefix backend"
   },
   "keywords": [],
   "author": "",
