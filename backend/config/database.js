@@ -1,9 +1,14 @@
 // backend/config/database.js
+const config = require('./index');
+
 module.exports = {
   development: {
-    storage: 'db/dev.db',
-    dialect: 'sqlite',
-    seederStorage: 'sequelize',
+    storage: config.dbFile,
+    dialect: "sqlite",
+    seederStorage: "sequelize",
+    logQueryParameters: true,
+    typeValidation: true,
+    logging: console.log
   },
   production: {
     use_env_variable: 'DATABASE_URL',
@@ -12,11 +17,11 @@ module.exports = {
     dialectOptions: {
       ssl: {
         require: true,
-        rejectUnauthorized: false,
-      },
+        rejectUnauthorized: false
+      }
     },
     define: {
-      schema: process.env.SCHEMA,
-    },
-  },
+      schema: process.env.SCHEMA
+    }
+  }
 };
