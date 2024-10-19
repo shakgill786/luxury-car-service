@@ -1,15 +1,12 @@
-const config = require('../index');  // Adjust based on your config file location
-
+// backend/config/database.js
 module.exports = {
   development: {
-    storage: config.dbFile,  // SQLite for local dev
-    dialect: "sqlite",
-    seederStorage: "sequelize",
-    logQueryParameters: true,
-    typeValidation: true,
+    storage: 'db/dev.db',
+    dialect: 'sqlite',
+    seederStorage: 'sequelize',
   },
   production: {
-    use_env_variable: 'DATABASE_URL',  // PostgreSQL on Render
+    use_env_variable: 'DATABASE_URL',
     dialect: 'postgres',
     seederStorage: 'sequelize',
     dialectOptions: {
@@ -19,7 +16,7 @@ module.exports = {
       },
     },
     define: {
-      schema: process.env.SCHEMA,  // Ensure schema is set in Render env vars
+      schema: process.env.SCHEMA,
     },
   },
 };
