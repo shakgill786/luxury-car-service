@@ -28,7 +28,7 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       validate: { min: 1, max: 5 },
     },
-  }, options);
+  });
 
   Review.associate = (models) => {
     Review.belongsTo(models.Spot, { foreignKey: 'spotId' });

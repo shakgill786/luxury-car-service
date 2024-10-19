@@ -17,7 +17,7 @@ module.exports = (sequelize, DataTypes) => {
       references: { model: 'Spots', key: 'id' },
       onDelete: 'CASCADE',
     },
-  },options);
+  });
 
   SpotImage.associate = function (models) {
     SpotImage.belongsTo(models.Spot, { foreignKey: 'spotId' });

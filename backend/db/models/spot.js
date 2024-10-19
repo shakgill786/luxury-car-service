@@ -43,7 +43,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.FLOAT,
       allowNull: false,
     },
-  },options);
+  });
 
   Spot.associate = (models) => {
     Spot.hasMany(models.Review, { foreignKey: 'spotId', onDelete: 'CASCADE' });
