@@ -17,10 +17,8 @@ module.exports = (sequelize, DataTypes) => {
       references: { model: 'Spots', key: 'id' },
       onDelete: 'CASCADE',
     },
-  }, 
-  {
-    schema: 'luxury_schema' // Corrected the placement of the schema option
-  });
+  },options);
+
   SpotImage.associate = function (models) {
     SpotImage.belongsTo(models.Spot, { foreignKey: 'spotId' });
   };

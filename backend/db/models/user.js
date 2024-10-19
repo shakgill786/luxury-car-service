@@ -44,11 +44,8 @@ module.exports = (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: 'User',
-    }, 
-    {
-      schema: 'luxury_schema' // Corrected the placement of the schema option
     });
-
+    
   User.associate = (models) => {
     // User can create multiple spots
     User.hasMany(models.Spot, { foreignKey: 'ownerId', onDelete: 'CASCADE' });

@@ -13,10 +13,7 @@ module.exports = (sequelize, DataTypes) => {
       references: { model: 'Reviews', key: 'id' },
       onDelete: 'CASCADE',
     },
-  }, 
-  {
-    schema: 'luxury_schema' // Corrected the placement of the schema option
-  });
+  },options);
 
   ReviewImage.associate = (models) => {
     ReviewImage.belongsTo(models.Review, { foreignKey: 'reviewId' });
