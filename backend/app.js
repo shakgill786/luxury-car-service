@@ -7,7 +7,7 @@ const helmet = require('helmet'); // Security middleware
 const cookieParser = require('cookie-parser'); // To parse cookies
 
 // Import the config file
-const { environment } = require('../backend/config');
+const { environment } = require('./config');
 const isProduction = environment === 'production';
 
 // Initialize the express app
