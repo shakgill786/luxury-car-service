@@ -1,5 +1,4 @@
 const { sequelize } = require('./db/models');
-const config = require('../config/database');  // Adjust path if needed
 
 
 sequelize.showAllSchemas({ logging: false }).then(async (data) => {
