@@ -1,0 +1,15 @@
+/* src/components/Home.css */
+.home {
+    text-align: center;
+    padding: 50px;
+}
+
+.home h1 {
+    font-size: 36px;
+    color: #333;
+}
+
+.home p {
+    font-size: 18px;
+    color: #666;
+}
