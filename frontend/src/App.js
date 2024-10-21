@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import './App.css';
 
 // Import your components
@@ -19,46 +19,56 @@ import { useAuth } from './hooks/useAuth';
 function App() {
   const { user, loading } = useAuth();
 
+  // Show a loading state until authentication check is complete
   if (loading) {
     return <div>Loading...</div>;
   }
 
   return (
-    <div className="App">
-      <Navbar />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<SignUp />} />
+    <Router>
+      <div className="App">
+        {/* Adding Navbar */}
+        <Navbar />
         
-        {/* Protected Routes */}
-        <Route 
-          path="/spots" 
-          element={user ? <SpotsList /> : <Navigate to="/login" />} 
-        />
-        <Route 
-          path="/spots/new" 
-          element={user ? <CreateSpot /> : <Navigate to="/login" />} 
-        />
-        <Route 
-          path="/spots/:spotId" 
-          element={<SpotDetails />} 
-        />
-        <Route 
-          path="/my-spots" 
-          element={user ? <UserSpots /> : <Navigate to="/login" />} 
-        />
-        <Route 
-          path="/spots/:spotId/edit" 
-          element={user ? <EditSpot /> : <Navigate to="/login" />} 
-        />
-        <Route 
-          path="/spots/:spotId/reviews" 
-          element={<Reviews />} 
-        />
-      </Routes>
-      <Footer />
-    </div>
+        {/* Main content area */}
+        <main>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<SignUp />} />
+            
+            {/* Protected Routes */}
+            <Route 
+              path="/spots" 
+              element={user ? <SpotsList /> : <Navigate to="/login" />} 
+            />
+            <Route 
+              path="/spots/new" 
+              element={user ? <CreateSpot /> : <Navigate to="/login" />} 
+            />
+            <Route 
+              path="/spots/:spotId" 
+              element={<SpotDetails />} 
+            />
+            <Route 
+              path="/my-spots" 
+              element={user ? <UserSpots /> : <Navigate to="/login" />} 
+            />
+            <Route 
+              path="/spots/:spotId/edit" 
+              element={user ? <EditSpot /> : <Navigate to="/login" />} 
+            />
+            <Route 
+              path="/spots/:spotId/reviews" 
+              element={<Reviews />} 
+            />
+          </Routes>
+        </main>
+
+        {/* Adding Footer */}
+        <Footer />
+      </div>
+    </Router>
   );
 }
 
