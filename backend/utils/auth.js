@@ -1,3 +1,4 @@
+// backend/utils/auth.js
 const jwt = require('jsonwebtoken');
 const { jwtConfig } = require('../config');
 const { User } = require('../db/models');
@@ -23,11 +24,13 @@ const setTokenCookie = (res, user) => {
     maxAge: expiresIn * 1000, // maxAge in milliseconds
     httpOnly: true,
     secure: isProduction,
-    sameSite: isProduction && "Lax"
+    sameSite: isProduction ? "Lax" : "Strict"
   });
 
   return token;
 };
+
+// Middleware to restore the user session based on JWT token
 const restoreUser = (req, res, next) => {
   const { token } = req.cookies;
   req.user = null;
@@ -60,7 +63,6 @@ const restoreUser = (req, res, next) => {
     return next(); // Proceed to the next middleware if everything is OK
   });
 };
-
 
 // Middleware for requiring user authentication
 const requireAuth = (req, _res, next) => {

@@ -1,91 +1,93 @@
-// backend/routes/api/session.js
+// backend/app.js
 const express = require('express');
-const { Op } = require('sequelize');
-const bcrypt = require('bcryptjs');
-const { setTokenCookie } = require('../../utils/auth');
-const { User } = require('../../../backend/db/models');
-const { check } = require('express-validator');
-const { handleValidationErrors } = require('../../utils/validation');
+require('express-async-errors'); // For handling async route errors
+const morgan = require('morgan'); // For logging HTTP requests
+const cors = require('cors'); // Cross-Origin Resource Sharing
+const csurf = require('csurf'); // CSRF protection
+const helmet = require('helmet'); // Security middleware
+const cookieParser = require('cookie-parser'); // To parse cookies
+const { restoreUser } = require('./utils/auth'); // Restore user session
 
-const router = express.Router();
+// Import the config file
+const { environment } = require('./config');
+const isProduction = environment === 'production';
 
-// Define the validation middleware BEFORE it's used
-const validateLogin = [
-  check('credential')
-    .exists({ checkFalsy: true })
-    .notEmpty()
-    .withMessage('Please provide a valid email or username.'),
-  check('password')
-    .exists({ checkFalsy: true })
-    .withMessage('Please provide a password.'),
-  handleValidationErrors
-];
+// Initialize the express app
+const app = express();
 
-// Log in route using validateLogin middleware
-router.post(
-  '/',
-  validateLogin,  // Now validateLogin is defined before it's used
-  async (req, res, next) => {
-    const { credential, password } = req.body;
+// Connect the morgan middleware for logging
+app.use(morgan('dev'));
 
-    const user = await User.unscoped().findOne({
-      where: {
-        [Op.or]: {
-          username: credential,
-          email: credential
-        }
-      }
-    });
+// Middleware for parsing cookies and JSON request bodies
+app.use(cookieParser());
+app.use(express.json());
 
-    if (!user || !bcrypt.compareSync(password, user.hashedPassword.toString())) {
-      const err = new Error('Login failed');
-      err.status = 401;
-      err.title = 'Login failed';
-      err.errors = { credential: 'The provided credentials were invalid.' };
-      return next(err);
+// Security Middleware
+if (!isProduction) {
+  // Enable CORS only in development
+  app.use(cors());
+}
+
+// Use helmet for better security
+app.use(
+  helmet.crossOriginResourcePolicy({
+    policy: "cross-origin"
+  })
+);
+
+// Set the _csrf token and create req.csrfToken method
+app.use(
+  csurf({
+    cookie: {
+      secure: isProduction,
+      sameSite: isProduction ? "Lax" : "Strict",
+      httpOnly: true
     }
-
-    const safeUser = {
-      id: user.id,
-      email: user.email,
-      username: user.username,
-    };
-
-    await setTokenCookie(res, safeUser);
-
-    return res.json({
-      user: safeUser
-    });
-  }
+  })
 );
 
-// Log out
-router.delete(
-  '/',
-  (_req, res) => {
-    res.clearCookie('token');
-    return res.json({ message: 'success' });
-  }
-);
+// Restore user session
+app.use(restoreUser);
 
-// Restore session user
-router.get(
-  '/',
-  (req, res) => {
-    const { user } = req; // req.user is set by restoreUser middleware
-    if (user) {
-      const safeUser = {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-      };
-      return res.json({
-        user: safeUser
-      });
-    } else {
-      return res.json({ user: null });
+// Import routes and apply them to the app
+const routes = require('./routes');  // Import the routes file
+app.use(routes);  // Use the imported routes
+
+// Catch unhandled requests and forward to error handler.
+app.use((_req, _res, next) => {
+  const err = new Error("The requested resource couldn't be found.");
+  err.title = "Resource Not Found";
+  err.errors = { message: "The requested resource couldn't be found." };
+  err.status = 404;
+  next(err);
+});
+
+// Import Sequelize ValidationError
+const { ValidationError } = require('sequelize');
+
+// Process Sequelize errors
+app.use((err, _req, _res, next) => {
+  if (err instanceof ValidationError) {
+    let errors = {};
+    for (let error of err.errors) {
+      errors[error.path] = error.message;
     }
+    err.title = 'Validation Error';
+    err.errors = errors;
   }
-);
+  next(err);
+});
 
-module.exports = router;
+// Error formatter
+app.use((err, _req, res, _next) => {
+  res.status(err.status || 500);
+  res.json({
+    title: err.title || 'Server Error',
+    message: err.message,
+    errors: err.errors,
+    stack: isProduction ? null : err.stack
+  });
+});
+
+// Export the app
+module.exports = app;

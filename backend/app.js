@@ -5,7 +5,7 @@ const cors = require('cors'); // Cross-Origin Resource Sharing
 const csurf = require('csurf'); // CSRF protection
 const helmet = require('helmet'); // Security middleware
 const cookieParser = require('cookie-parser'); // To parse cookies
-const path = require('path'); // For serving static files
+const { restoreUser } = require('./utils/auth'); // Restore user session
 
 // Import the config file
 const { environment } = require('./config');
@@ -45,17 +45,12 @@ app.use(
   })
 );
 
-// Serve static files from the "public" directory
-app.use(express.static(path.join(__dirname, 'public')));
+// Restore user session
+app.use(restoreUser);
 
 // Import routes and apply them to the app
-const routes = require('./routes'); // Adjusted the path for clarity
-app.use(routes);
-
-// Define a route to serve the main HTML page
-app.get('/', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+const routes = require('./routes');  // Import the routes file
+app.use(routes);  // Use the imported routes
 
 // Catch unhandled requests and forward to error handler.
 app.use((_req, _res, next) => {
