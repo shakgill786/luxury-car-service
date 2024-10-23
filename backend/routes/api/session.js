@@ -1,4 +1,3 @@
-// backend/routes/api/session.js
 const express = require('express');
 const { Op } = require('sequelize');
 const bcrypt = require('bcryptjs');
@@ -9,7 +8,7 @@ const { handleValidationErrors } = require('../../utils/validation');
 
 const router = express.Router();
 
-// Define the validation middleware BEFORE it's used
+// **Login Validation Middleware**
 const validateLogin = [
   check('credential')
     .exists({ checkFalsy: true })
@@ -21,56 +20,56 @@ const validateLogin = [
   handleValidationErrors
 ];
 
-// Log in route using validateLogin middleware
-router.post(
-  '/',
-  validateLogin,
-  async (req, res, next) => {
-    const { credential, password } = req.body;
+// **Log In a User**
+router.post('/', validateLogin, async (req, res, next) => {
+  const { credential, password } = req.body;
 
-    const user = await User.unscoped().findOne({
-      where: {
-        [Op.or]: {
-          username: credential,
-          email: credential
-        }
-      }
-    });
-
-    if (!user || !bcrypt.compareSync(password, user.hashedPassword.toString())) {
-      const err = new Error('Login failed');
-      err.status = 401;
-      err.title = 'Login failed';
-      err.errors = { credential: 'The provided credentials were invalid.' };
-      return next(err);
+  const user = await User.unscoped().findOne({
+    where: {
+      [Op.or]: { username: credential, email: credential }
     }
+  });
 
-    const safeUser = {
-      id: user.id,
-      email: user.email,
-      username: user.username,
-    };
-
-    await setTokenCookie(res, safeUser);
-
-    return res.json({ user: safeUser });
+  // **Invalid Credentials Error Handling**
+  if (!user || !bcrypt.compareSync(password, user.hashedPassword.toString())) {
+    return res.status(401).json({
+      message: 'Invalid credentials',
+      errors: { credential: 'The provided credentials were invalid.' }
+    });
   }
-);
 
-// Log out
-router.delete('/', (_req, res) => {
-  res.clearCookie('token');
-  return res.json({ message: 'success' });
+  // **Prepare Safe User Object for Response**
+  const safeUser = {
+    id: user.id,
+    email: user.email,
+    username: user.username,
+    firstName: user.firstName,
+    lastName: user.lastName
+  };
+
+  // **Set Token Cookie**
+  await setTokenCookie(res, safeUser);
+
+  return res.json({ user: safeUser });
 });
 
-// Restore session user
+// **Log Out a User**
+router.delete('/', (_req, res) => {
+  res.clearCookie('token');
+  return res.json({ message: 'Successfully logged out' });
+});
+
+// **Restore Session User**
 router.get('/', restoreUser, (req, res) => {
   const { user } = req;
+  
   if (user) {
     const safeUser = {
       id: user.id,
       email: user.email,
       username: user.username,
+      firstName: user.firstName,
+      lastName: user.lastName
     };
     return res.json({ user: safeUser });
   } else {

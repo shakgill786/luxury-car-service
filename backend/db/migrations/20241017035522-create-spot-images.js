@@ -2,8 +2,8 @@
 let options = {};
 if (process.env.NODE_ENV === 'production') {
   options.schema = process.env.SCHEMA;  // Add schema only for production
-  options.tableName = 'SpotImages'
 }
+ options.tableName = 'SpotImages'
 
 module.exports = {
   async up(queryInterface, Sequelize) {
