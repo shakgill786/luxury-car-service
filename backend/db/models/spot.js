@@ -40,16 +40,74 @@ module.exports = (sequelize, DataTypes) => {
 
   Spot.init(
     {
-      ownerId: DataTypes.INTEGER,
-      address: DataTypes.STRING,
-      city: DataTypes.STRING,
-      state: DataTypes.STRING,
-      country: DataTypes.STRING,
-      lat: DataTypes.FLOAT,
-      lng: DataTypes.FLOAT,
-      name: DataTypes.STRING,
-      description: DataTypes.TEXT,
-      price: DataTypes.FLOAT,
+      ownerId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+      address: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: {
+          notEmpty: true,
+        },
+      },
+      city: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: {
+          notEmpty: true,
+        },
+      },
+      state: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: {
+          notEmpty: true,
+        },
+      },
+      country: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: {
+          notEmpty: true,
+        },
+      },
+      lat: {
+        type: DataTypes.FLOAT,
+        allowNull: false,
+        validate: {
+          isFloat: true,
+        },
+      },
+      lng: {
+        type: DataTypes.FLOAT,
+        allowNull: false,
+        validate: {
+          isFloat: true,
+        },
+      },
+      name: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: {
+          len: [1, 255],
+        },
+      },
+      description: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+        validate: {
+          notEmpty: true,
+        },
+      },
+      price: {
+        type: DataTypes.FLOAT,
+        allowNull: false,
+        validate: {
+          isFloat: true,
+          min: 0,
+        },
+      },
     },
     {
       sequelize,
