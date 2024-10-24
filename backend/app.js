@@ -61,6 +61,14 @@ app.use((_req, _res, next) => {
   next(err);
 });
 
+// Middleware to include CSRF token in responses
+app.use((req, res, next) => {
+  const csrfToken = req.csrfToken();
+  res.cookie('XSRF-TOKEN', csrfToken);
+  res.locals.csrfToken = csrfToken; // Optional: Use in views
+  next();
+});
+
 // Import Sequelize ValidationError
 const { ValidationError } = require('sequelize');
 
