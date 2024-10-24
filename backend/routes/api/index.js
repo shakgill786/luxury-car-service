@@ -13,6 +13,13 @@ const imagesRouter = require('./images');
 // **CSRF Protection Middleware**
 const csrfProtection = csrf({ cookie: true });
 
+router.get('/csrf/restore', csrfProtection, (req, res) => {
+  const csrfToken = req.csrfToken();
+  res.cookie('XSRF-TOKEN', csrfToken);
+  res.status(200).json({ 'XSRF-Token': csrfToken });
+});
+
+
 // **Restore User Middleware** - Ensures `req.user` is populated for routes that need it.
 router.use(restoreUser);
 
