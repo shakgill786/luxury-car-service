@@ -3,7 +3,7 @@ let options = {};
 if (process.env.NODE_ENV === 'production') {
   options.schema = process.env.SCHEMA;  // Add schema only for production
 }
-  options.tableName = 'Reviewimages'
+  options.tableName = 'ReviewImages'
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
@@ -41,6 +41,7 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
+    let options = {};
     options.tableName = "ReviewImages";
     await queryInterface.dropTable(options);
   },
