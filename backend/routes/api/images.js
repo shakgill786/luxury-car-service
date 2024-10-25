@@ -1,58 +1,90 @@
 const express = require('express');
 const { requireAuth } = require('../../utils/auth');
-const { SpotImage, Spot, ReviewImage, Review } = require('../../db/models'); // Consolidated imports
+const { SpotImage, Spot, ReviewImage, Review } = require('../../db/models');
+
 const router = express.Router();
 
-// **Delete a spot image**
-router.delete('/spot-images/:imageId', requireAuth, async (req, res) => {
-  try {
-    const { imageId } = req.params;
-    const { user } = req;
+/**
+ * Helper Function to Find and Delete Images
+ * This function handles both SpotImage and ReviewImage deletions
+ */
+const findAndDeleteImage = async (model, imageId, ownerKey, req, res) => {
+  const image = await model.findByPk(imageId, {
+    include: { model: ownerKey === 'ownerId' ? Spot : Review, attributes: [ownerKey] },
+  });
 
-    const spotImage = await SpotImage.findByPk(imageId, {
-      include: { model: Spot, attributes: ['ownerId'] },
+  if (!image) {
+    return res.status(404).json({ message: `${model.name} couldn't be found` });
+  }
+
+  if (image[ownerKey === 'ownerId' ? 'Spot' : 'Review'][ownerKey] !== req.user.id) {
+    return res.status(403).json({ message: 'Forbidden' });
+  }
+
+  try {
+    await image.destroy();
+    res.json({ message: 'Successfully deleted' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+/**
+ * Add an Image to a Spot
+ * Requires Authentication and Authorization
+ */
+router.post('/:spotId/images', requireAuth, async (req, res) => {
+  const { spotId } = req.params;
+  const { url, preview } = req.body;
+
+  // Validate input
+  if (!url) {
+    return res.status(400).json({
+      message: 'Bad Request',
+      errors: { url: 'Image URL is required' },
+    });
+  }
+
+  const spot = await Spot.findByPk(spotId);
+  if (!spot) {
+    return res.status(404).json({ message: "Spot couldn't be found" });
+  }
+
+  if (spot.ownerId !== req.user.id) {
+    return res.status(403).json({ message: 'Forbidden' });
+  }
+
+  try {
+    const newImage = await SpotImage.create({
+      spotId: spot.id,
+      url,
+      preview,
     });
 
-    if (!spotImage) {
-      return res.status(404).json({ message: "Spot Image couldn't be found" });
-    }
-
-    if (spotImage.Spot.ownerId !== user.id) {
-      return res.status(403).json({ message: 'Forbidden' });
-    }
-
-    await spotImage.destroy();
-    return res.json({ message: 'Successfully deleted' });
+    res.status(201).json({
+      id: newImage.id,
+      url: newImage.url,
+      preview: newImage.preview,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 
-// **Delete a review image**
+/**
+ * Delete a Spot Image
+ */
+router.delete('/spot-images/:imageId', requireAuth, async (req, res) => {
+  await findAndDeleteImage(SpotImage, req.params.imageId, 'ownerId', req, res);
+});
+
+/**
+ * Delete a Review Image
+ */
 router.delete('/review-images/:imageId', requireAuth, async (req, res) => {
-  try {
-    const { imageId } = req.params;
-    const { user } = req;
-
-    const reviewImage = await ReviewImage.findByPk(imageId, {
-      include: { model: Review, attributes: ['userId'] },
-    });
-
-    if (!reviewImage) {
-      return res.status(404).json({ message: "Review Image couldn't be found" });
-    }
-
-    if (reviewImage.Review.userId !== user.id) {
-      return res.status(403).json({ message: 'Forbidden' });
-    }
-
-    await reviewImage.destroy();
-    return res.json({ message: 'Successfully deleted' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Internal Server Error' });
-  }
+  await findAndDeleteImage(ReviewImage, req.params.imageId, 'userId', req, res);
 });
 
 module.exports = router;
