@@ -1,12 +1,11 @@
-// backend/routes/api/users.js
 const express = require('express');
-const router = express.Router();
 const bcrypt = require('bcryptjs');
 const { User } = require('../../../backend/db/models');
 const { setTokenCookie } = require('../../utils/auth');
 const { check } = require('express-validator');
 const { handleValidationErrors } = require('../../utils/validation');
 const { Op } = require('sequelize');
+const router = express.Router();
 
 // **Validation for Signup**
 const validateSignup = [
@@ -17,8 +16,7 @@ const validateSignup = [
   check('username')
     .exists({ checkFalsy: true })
     .isLength({ min: 4 })
-    .withMessage('Please provide a username with at least 4 characters.'),
-  check('username')
+    .withMessage('Please provide a username with at least 4 characters.')
     .not()
     .isEmail()
     .withMessage('Username cannot be an email.'),
@@ -40,7 +38,7 @@ router.post('/', validateSignup, async (req, res, next) => {
   const { email, password, username, firstName, lastName } = req.body;
 
   try {
-    // Check if email or username already exists
+    // Check for existing user by email or username
     const existingUser = await User.findOne({
       where: {
         [Op.or]: [{ email }, { username }],
@@ -48,7 +46,7 @@ router.post('/', validateSignup, async (req, res, next) => {
     });
 
     if (existingUser) {
-      return res.status(400).json({
+      return res.status(409).json({
         message: 'User already exists',
         errors: {
           email: 'A user with that email or username already exists',
@@ -56,8 +54,8 @@ router.post('/', validateSignup, async (req, res, next) => {
       });
     }
 
-    // Hash the password
-    const hashedPassword = bcrypt.hashSync(password, 10); // Added salt rounds for more secure hashing
+    // Hash the password with salt
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create the user
     const user = await User.create({
@@ -79,7 +77,7 @@ router.post('/', validateSignup, async (req, res, next) => {
     // Set the token cookie
     await setTokenCookie(res, safeUser);
 
-    // Return the new user with all required fields
+    // Return the new user
     return res.status(201).json({ user: safeUser });
 
   } catch (error) {
@@ -96,18 +94,16 @@ router.post('/login', async (req, res, next) => {
   const { email, password } = req.body;
 
   try {
-    // Find the user by email
+    // Find user by email
     const user = await User.findOne({ where: { email } });
 
-    // If user doesn't exist or password doesn't match
-    if (!user || !bcrypt.compareSync(password, user.hashedPassword.toString())) {
+    if (!user || !bcrypt.compareSync(password, user.hashedPassword)) {
       return res.status(401).json({
-        message: "Invalid credentials",
-        errors: { email: "Invalid email or password" },
+        message: 'Invalid credentials',
+        errors: { email: 'Invalid email or password' },
       });
     }
 
-    // Create a safeUser object to use with the token
     const safeUser = {
       id: user.id,
       email: user.email,
@@ -124,7 +120,7 @@ router.post('/login', async (req, res, next) => {
   } catch (error) {
     console.error('Log-In Error:', error);
     return res.status(500).json({
-      message: "Server Error",
+      message: 'Server Error',
       errors: error.errors || [],
     });
   }
@@ -133,19 +129,17 @@ router.post('/login', async (req, res, next) => {
 // **Get Current User Route**
 router.get('/me', async (req, res, next) => {
   try {
-    // Assuming req.user is set by an authentication middleware
     if (!req.user) {
       return res.status(401).json({
-        message: "Authentication required",
-        errors: { user: "User is not authenticated" },
+        message: 'Authentication required',
+        errors: { user: 'User is not authenticated' },
       });
     }
 
-    // Find the user by primary key
     const user = await User.findByPk(req.user.id);
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: 'User not found' });
     }
 
     const safeUser = {
@@ -160,12 +154,10 @@ router.get('/me', async (req, res, next) => {
   } catch (error) {
     console.error('Get Current User Error:', error);
     return res.status(500).json({
-      message: "Server Error",
+      message: 'Server Error',
       errors: error.errors || [],
     });
   }
 });
-
-
 
 module.exports = router;
