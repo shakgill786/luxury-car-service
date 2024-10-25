@@ -21,46 +21,14 @@ const validateLogin = [
 ];
 
 // **Log In a User**
-router.post(
-  '/',
-    validateLogin,
-    async (req, res, next) => {
-      const { credential, password } = req.body;
+router.post('/', validateLogin, async (req, res, next) => {
+  const { credential, password } = req.body;
 
-      const user = await User.unscoped().findOne({
-        where: {
-          [Op.or]: {
-            username: credential,
-            email: credential
-          }
-        }
-      });
-
-      if (!user || !bcrypt.compareSync(password, user.hashedPassword.toString())) {
-        const err = new Error('Invalid credentials');
-        err.status = 401;
-        err.title = 'Invalid credentials';
-        err.errors = { credential: 'Invalid credentials' };
-        return next(err);
-      }
-
-      const safeUser = {
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        username: user.username,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt
-      };
-
-      await setTokenCookie(res, safeUser);
-
-      return res.json({
-        user: safeUser
-      });
+  const user = await User.unscoped().findOne({
+    where: {
+      [Op.or]: { username: credential, email: credential }
     }
-);
+  });
 
   // **Invalid Credentials Error Handling**
   if (!user || !bcrypt.compareSync(password, user.hashedPassword.toString())) {
