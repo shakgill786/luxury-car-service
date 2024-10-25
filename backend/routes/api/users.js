@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { User } = require('../../../backend/db/models');
-const { setTokenCookie } = require('../../utils/auth');
+const { setTokenCookie, requireAuth, restoreUser } = require('../../utils/auth');
 const { check } = require('express-validator');
 const { handleValidationErrors } = require('../../utils/validation');
 const { Op } = require('sequelize');
@@ -33,6 +33,18 @@ const validateSignup = [
   handleValidationErrors,
 ];
 
+// **Validation for Login**
+const validateLogin = [
+  check('credential')
+    .exists({ checkFalsy: true })
+    .notEmpty()
+    .withMessage('Please provide a valid email or username.'),
+  check('password')
+    .exists({ checkFalsy: true })
+    .withMessage('Please provide a password.'),
+  handleValidationErrors
+];
+
 // **Signup Route**
 router.post('/', validateSignup, async (req, res, next) => {
   const { email, password, username, firstName, lastName } = req.body;
@@ -44,7 +56,6 @@ router.post('/', validateSignup, async (req, res, next) => {
       },
     });
 
-    // Return 500 to match the test case for existing users
     if (existingUser) {
       return res.status(500).json({
         message: 'User already exists',
@@ -56,7 +67,6 @@ router.post('/', validateSignup, async (req, res, next) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-
     const user = await User.create({
       email,
       username,
@@ -71,9 +81,11 @@ router.post('/', validateSignup, async (req, res, next) => {
       username: user.username,
       firstName: user.firstName,
       lastName: user.lastName,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
     };
 
-    await setTokenCookie(res, safeUser);
+    await setTokenCookie(res, user);
 
     return res.status(201).json({ user: safeUser });
 
@@ -86,92 +98,71 @@ router.post('/', validateSignup, async (req, res, next) => {
   }
 });
 
-// **Log In a User**
-router.post('/api/session', async (req, res, next) => {
+// **Login Route**
+router.post('/login', validateLogin, async (req, res, next) => {
   const { credential, password } = req.body;
 
-  // **400 Bad Request if missing fields**
-  if (!credential || !password) {
-    return res.status(400).json({
-      message: 'Bad Request', // Exact message matching the API docs
-      errors: {
-        ...(credential ? {} : { credential: 'Email or username is required' }),
-        ...(password ? {} : { password: 'Password is required' }),
-      },
-    });
-  }
-
   try {
-    // **Find user by email or username**
-    const user = await User.findOne({
+    const user = await User.unscoped().findOne({
       where: {
-        [Op.or]: [{ email: credential }, { username: credential }],
+        [Op.or]: [{ username: credential }, { email: credential }],
       },
     });
 
-    // **401 Unauthorized if invalid credentials**
-    if (!user || !bcrypt.compareSync(password, user.hashedPassword)) {
-      return res.status(401).json({
-        message: 'Invalid credentials',
-      });
+    if (!user || !bcrypt.compareSync(password, user.hashedPassword.toString())) {
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // **Prepare safe user object for response**
     const safeUser = {
       id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
       email: user.email,
       username: user.username,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
     };
 
-    // **Set token cookie**
-    await setTokenCookie(res, safeUser);
+    await setTokenCookie(res, user);
 
-    // **Return successful login response**
-    return res.status(200).json({ user: safeUser });
+    return res.json({ user: safeUser });
 
   } catch (error) {
     console.error('Log-In Error:', error);
-    return res.status(500).json({
-      message: 'Server Error',
-      errors: error.errors || [],
-    });
+    return res.status(500).json({ message: 'Server Error', errors: error.errors || [] });
   }
 });
 
 // **Get Current User Route**
-router.get('/me', async (req, res, next) => {
+router.get('/me', restoreUser, async (req, res, next) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({
-        message: 'Authentication required',
-        errors: { user: 'User is not authenticated' },
-      });
+    const { user } = req;
+
+    if (user) {
+      const safeUser = {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
+      };
+      return res.json({ user: safeUser });
+    } else {
+      return res.json({ user: null });
     }
 
-    const user = await User.findByPk(req.user.id);
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    const safeUser = {
-      id: user.id,
-      email: user.email,
-      username: user.username,
-      firstName: user.firstName,
-      lastName: user.lastName,
-    };
-
-    return res.status(200).json({ user: safeUser });
   } catch (error) {
     console.error('Get Current User Error:', error);
-    return res.status(500).json({
-      message: 'Server Error',
-      errors: error.errors || [],
-    });
+    return res.status(500).json({ message: 'Server Error', errors: error.errors || [] });
   }
+});
+
+// **Log Out a User**
+router.delete('/logout', (_req, res) => {
+  res.clearCookie('token');
+  return res.json({ message: 'Successfully logged out' });
 });
 
 module.exports = router;

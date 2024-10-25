@@ -17,49 +17,44 @@ const validateLogin = [
   check('password')
     .exists({ checkFalsy: true })
     .withMessage('Please provide a password.'),
-  handleValidationErrors
+  handleValidationErrors,
 ];
 
 // **Log In a User**
 router.post('/', validateLogin, async (req, res, next) => {
   const { credential, password } = req.body;
 
-  // **Check if credential and password are provided**
-  if (!credential || !password) {
-    return res.status(400).json({
-      message: "Bad Request",
-      errors: {
-        credential: !credential ? "Email or username is required" : undefined,
-        password: !password ? "Password is required" : undefined,
-      }
+  try {
+    const user = await User.unscoped().findOne({
+      where: {
+        [Op.or]: [{ username: credential }, { email: credential }],
+      },
     });
-  }
 
-  const user = await User.unscoped().findOne({
-    where: {
-      [Op.or]: [{ username: credential }, { email: credential }]
+    // **Check if user exists and password is correct**
+    if (!user || !bcrypt.compareSync(password, user.hashedPassword.toString())) {
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
-  });
 
-  // **Invalid Credentials Handling**
-  if (!user || !bcrypt.compareSync(password, user.hashedPassword.toString())) {
-    return res.status(401).json({
-      message: "Invalid credentials"
-    });
+    const safeUser = {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
+
+    // **Set Token Cookie**
+    await setTokenCookie(res, safeUser);
+
+    return res.json({ user: safeUser });
+
+  } catch (error) {
+    console.error('Log-In Error:', error);
+    return res.status(500).json({ message: 'Server Error', errors: error.errors || [] });
   }
-
-  const safeUser = {
-    id: user.id,
-    email: user.email,
-    username: user.username,
-    firstName: user.firstName,
-    lastName: user.lastName
-  };
-
-  // **Set Token Cookie**
-  await setTokenCookie(res, safeUser);
-
-  return res.json({ user: safeUser });
 });
 
 // **Log Out a User**
@@ -78,7 +73,9 @@ router.get('/', restoreUser, (req, res) => {
       email: user.email,
       username: user.username,
       firstName: user.firstName,
-      lastName: user.lastName
+      lastName: user.lastName,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
     };
     return res.json({ user: safeUser });
   } else {
