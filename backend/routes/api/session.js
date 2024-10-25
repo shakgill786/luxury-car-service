@@ -31,7 +31,6 @@ router.post('/', validateLogin, async (req, res, next) => {
       },
     });
 
-    // **Check if user exists and password is correct**
     if (!user || !bcrypt.compareSync(password, user.hashedPassword.toString())) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
@@ -46,7 +45,6 @@ router.post('/', validateLogin, async (req, res, next) => {
       updatedAt: user.updatedAt,
     };
 
-    // **Set Token Cookie**
     await setTokenCookie(res, safeUser);
 
     return res.json({ user: safeUser });
@@ -63,17 +61,16 @@ router.delete('/', (_req, res) => {
   return res.json({ message: 'Successfully logged out' });
 });
 
-// **Restore Session User**
+// **Restore Session User (Get Current User)**
 router.get('/', restoreUser, (req, res) => {
   const { user } = req;
-
   if (user) {
     const safeUser = {
       id: user.id,
-      email: user.email,
-      username: user.username,
       firstName: user.firstName,
       lastName: user.lastName,
+      email: user.email,
+      username: user.username,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
