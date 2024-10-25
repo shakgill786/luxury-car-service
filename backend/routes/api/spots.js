@@ -20,9 +20,35 @@ const validateSpot = [
   handleValidationErrors,
 ];
 
-// **Get All Spots with Query Filters**
 router.get('/', async (req, res) => {
   let { page, size, minLat, maxLat, minLng, maxLng, minPrice, maxPrice } = req.query;
+
+  // Query parameter validation
+  const errors = {};
+  if (page && (isNaN(page) || page < 1)) {
+    errors.page = 'Page must be greater than or equal to 1';
+  }
+  if (size && (isNaN(size) || size < 1 || size > 20)) {
+    errors.size = 'Size must be between 1 and 20';
+  }
+  if (minLat && isNaN(minLat)) errors.minLat = 'Minimum latitude is invalid';
+  if (maxLat && isNaN(maxLat)) errors.maxLat = 'Maximum latitude is invalid';
+  if (minLng && isNaN(minLng)) errors.minLng = 'Minimum longitude is invalid';
+  if (maxLng && isNaN(maxLng)) errors.maxLng = 'Maximum longitude is invalid';
+  if (minPrice && (isNaN(minPrice) || minPrice < 0)) {
+    errors.minPrice = 'Minimum price must be greater than or equal to 0';
+  }
+  if (maxPrice && (isNaN(maxPrice) || maxPrice < 0)) {
+    errors.maxPrice = 'Maximum price must be greater than or equal to 0';
+  }
+
+  // If there are errors, return a 400 response with the error structure
+  if (Object.keys(errors).length > 0) {
+    return res.status(400).json({
+      message: 'Bad Request',
+      errors,
+    });
+  }
 
   page = parseInt(page) || 1;
   size = Math.min(parseInt(size) || 20, 20);
@@ -39,10 +65,10 @@ router.get('/', async (req, res) => {
     where,
     limit: size,
     offset: (page - 1) * size,
-    include: [{ model: SpotImage, where: { preview: true }, required: false }]
+    include: [{ model: SpotImage, where: { preview: true }, required: false }],
   });
 
-  const formattedSpots = spots.map(spot => ({
+  const formattedSpots = spots.map((spot) => ({
     id: spot.id,
     ownerId: spot.ownerId,
     address: spot.address,
@@ -54,11 +80,12 @@ router.get('/', async (req, res) => {
     name: spot.name,
     description: spot.description,
     price: spot.price,
-    previewImage: spot.SpotImages?.[0]?.url || null
+    previewImage: spot.SpotImages?.[0]?.url || null,
   }));
 
   res.json({ Spots: formattedSpots, page, size });
 });
+
 
 // **Get All Spots Owned by the Current User**
 router.get('/current', requireAuth, async (req, res) => {
@@ -94,8 +121,8 @@ router.get('/:spotId', async (req, res) => {
   const spot = await Spot.findByPk(spotId, {
     include: [
       { model: SpotImage, attributes: ['id', 'url', 'preview'] },
-      { model: User, as: 'Owner', attributes: ['id', 'firstName', 'lastName'] }
-    ]
+      { model: User, as: 'Owner', attributes: ['id', 'firstName', 'lastName'] },
+    ],
   });
 
   if (!spot) {
@@ -103,7 +130,7 @@ router.get('/:spotId', async (req, res) => {
   }
 
   const numReviews = await Review.count({ where: { spotId } });
-  const avgRating = await Review.aggregate('stars', 'avg', { where: { spotId } });
+  const avgRating = await Review.aggregate('stars', 'avg', { where: { spotId } }) || 0;
 
   const formattedSpot = {
     id: spot.id,
@@ -120,9 +147,9 @@ router.get('/:spotId', async (req, res) => {
     createdAt: spot.createdAt,
     updatedAt: spot.updatedAt,
     numReviews,
-    avgRating,
+    avgStarRating: parseFloat(avgRating.toFixed(2)),
     SpotImages: spot.SpotImages,
-    Owner: spot.Owner
+    Owner: spot.Owner,
   };
 
   res.json(formattedSpot);
