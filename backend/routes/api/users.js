@@ -86,17 +86,17 @@ router.post('/', validateSignup, async (req, res, next) => {
   }
 });
 
-// **Login Route**
+// **Log In a User**
 router.post('/api/session', async (req, res, next) => {
   const { credential, password } = req.body;
 
   // **400 Bad Request if missing fields**
   if (!credential || !password) {
     return res.status(400).json({
-      message: 'Bad Request', // Exact message required by the test
+      message: 'Bad Request', // Exact message matching the API docs
       errors: {
-        credential: !credential ? 'Email or username is required' : undefined,
-        password: !password ? 'Password is required' : undefined,
+        ...(credential ? {} : { credential: 'Email or username is required' }),
+        ...(password ? {} : { password: 'Password is required' }),
       },
     });
   }
