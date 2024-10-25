@@ -1,4 +1,3 @@
-// models/ReviewImage.js
 'use strict';
 
 module.exports = (sequelize, DataTypes) => {
@@ -15,8 +14,8 @@ module.exports = (sequelize, DataTypes) => {
     },
   });
 
-  ReviewImage.associate = (models) => {
-    ReviewImage.belongsTo(models.Review, { foreignKey: 'reviewId' });
+  ReviewImage.associate = function (models) {
+    ReviewImage.belongsTo(models.Review, { foreignKey: 'reviewId', onDelete: 'CASCADE' });
   };
 
   return ReviewImage;

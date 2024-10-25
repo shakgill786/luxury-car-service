@@ -1,4 +1,3 @@
-// models/booking.js
 'use strict';
 
 module.exports = (sequelize, DataTypes) => {
@@ -32,4 +31,3 @@ module.exports = (sequelize, DataTypes) => {
 
   return Booking;
 };
-

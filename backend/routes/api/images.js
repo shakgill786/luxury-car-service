@@ -6,18 +6,22 @@ const router = express.Router();
 
 /**
  * Helper Function to Find and Delete Images
- * This function handles both SpotImage and ReviewImage deletions
+ * This handles deletion of both SpotImage and ReviewImage models.
  */
 const findAndDeleteImage = async (model, imageId, ownerKey, req, res) => {
   const image = await model.findByPk(imageId, {
-    include: { model: ownerKey === 'ownerId' ? Spot : Review, attributes: [ownerKey] },
+    include: {
+      model: ownerKey === 'ownerId' ? Spot : Review,
+      attributes: [ownerKey],
+    },
   });
 
   if (!image) {
     return res.status(404).json({ message: `${model.name} couldn't be found` });
   }
 
-  if (image[ownerKey === 'ownerId' ? 'Spot' : 'Review'][ownerKey] !== req.user.id) {
+  const ownerId = image[ownerKey === 'ownerId' ? 'Spot' : 'Review'][ownerKey];
+  if (ownerId !== req.user.id) {
     return res.status(403).json({ message: 'Forbidden' });
   }
 
@@ -56,11 +60,7 @@ router.post('/:spotId/images', requireAuth, async (req, res) => {
   }
 
   try {
-    const newImage = await SpotImage.create({
-      spotId: spot.id,
-      url,
-      preview,
-    });
+    const newImage = await SpotImage.create({ spotId, url, preview });
 
     res.status(201).json({
       id: newImage.id,
@@ -75,6 +75,7 @@ router.post('/:spotId/images', requireAuth, async (req, res) => {
 
 /**
  * Delete a Spot Image
+ * Requires Authentication
  */
 router.delete('/spot-images/:imageId', requireAuth, async (req, res) => {
   await findAndDeleteImage(SpotImage, req.params.imageId, 'ownerId', req, res);
@@ -82,6 +83,7 @@ router.delete('/spot-images/:imageId', requireAuth, async (req, res) => {
 
 /**
  * Delete a Review Image
+ * Requires Authentication
  */
 router.delete('/review-images/:imageId', requireAuth, async (req, res) => {
   await findAndDeleteImage(ReviewImage, req.params.imageId, 'userId', req, res);

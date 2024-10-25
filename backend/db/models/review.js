@@ -1,12 +1,7 @@
-// models/Review.js
+'use strict';
+
 module.exports = (sequelize, DataTypes) => {
   const Review = sequelize.define('Review', {
-    id: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      primaryKey: true,
-      autoIncrement: true, // Ensure auto-increment is enabled
-    },
     userId: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -29,12 +24,12 @@ module.exports = (sequelize, DataTypes) => {
       validate: { 
         min: 1, 
         max: 5, 
-        isInt: true, // Ensure value is an integer
+        isInt: true,
       },
     },
   });
 
-  Review.associate = (models) => {
+  Review.associate = function (models) {
     Review.belongsTo(models.Spot, { foreignKey: 'spotId' });
     Review.belongsTo(models.User, { foreignKey: 'userId' });
     Review.hasMany(models.ReviewImage, { foreignKey: 'reviewId', onDelete: 'CASCADE' });

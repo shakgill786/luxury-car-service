@@ -22,15 +22,12 @@ module.exports = (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: 'SpotImage',
-      tableName: 'SpotImages', // Ensure the correct table name is used
+      tableName: 'SpotImages',
     }
   );
 
   SpotImage.associate = function (models) {
-    SpotImage.belongsTo(models.Spot, { 
-      foreignKey: 'spotId', 
-      onDelete: 'CASCADE' 
-    });
+    SpotImage.belongsTo(models.Spot, { foreignKey: 'spotId', onDelete: 'CASCADE' });
   };
 
   return SpotImage;

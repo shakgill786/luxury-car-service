@@ -1,10 +1,17 @@
 'use strict';
 
 module.exports = {
-  up: async (queryInterface, Sequelize) => {
+  async up(queryInterface, Sequelize) {
+    // Retrieve user IDs dynamically from the Users table
+    const users = await queryInterface.sequelize.query(
+      `SELECT id FROM "Users" ORDER BY id ASC;`
+    );
+
+    const userIds = users[0]; // Extract the array of user IDs
+
     await queryInterface.bulkInsert('Spots', [
       {
-        ownerId: 1,  // Matches the ID set in the Users seeder
+        ownerId: userIds[0].id, // First user ID
         address: '123 Ocean Drive',
         city: 'Los Angeles',
         state: 'California',
@@ -18,7 +25,7 @@ module.exports = {
         updatedAt: new Date(),
       },
       {
-        ownerId: 2,  // Matches the ID set in the Users seeder
+        ownerId: userIds[1].id, // Second user ID
         address: '456 Manhattan Ave',
         city: 'New York',
         state: 'New York',
@@ -32,7 +39,7 @@ module.exports = {
         updatedAt: new Date(),
       },
       {
-        ownerId: 3,  // Matches the ID set in the Users seeder
+        ownerId: userIds[2].id, // Third user ID
         address: '789 Mountain Road',
         city: 'Denver',
         state: 'Colorado',
@@ -45,11 +52,11 @@ module.exports = {
         createdAt: new Date(),
         updatedAt: new Date(),
       },
-      // Add additional spots similarly
+      // Add more spots if needed
     ], {});
   },
 
-  down: async (queryInterface, Sequelize) => {
+  async down(queryInterface, Sequelize) {
     await queryInterface.bulkDelete('Spots', null, {});
-  }
+  },
 };
