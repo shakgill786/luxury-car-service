@@ -87,13 +87,13 @@ router.post('/', validateSignup, async (req, res, next) => {
 });
 
 // **Login Route**
-router.post('/login', async (req, res, next) => {
+router.post('/api/session', async (req, res, next) => {
   const { credential, password } = req.body;
 
-  // Return 400 Bad Request for missing credentials
+  // **400 Bad Request if missing fields**
   if (!credential || !password) {
     return res.status(400).json({
-      message: 'Bad Request',
+      message: 'Bad Request', // Exact message required by the test
       errors: {
         credential: !credential ? 'Email or username is required' : undefined,
         password: !password ? 'Password is required' : undefined,
@@ -102,29 +102,33 @@ router.post('/login', async (req, res, next) => {
   }
 
   try {
+    // **Find user by email or username**
     const user = await User.findOne({
       where: {
         [Op.or]: [{ email: credential }, { username: credential }],
       },
     });
 
+    // **401 Unauthorized if invalid credentials**
     if (!user || !bcrypt.compareSync(password, user.hashedPassword)) {
       return res.status(401).json({
         message: 'Invalid credentials',
-        errors: { credential: 'The provided credentials were invalid.' },
       });
     }
 
+    // **Prepare safe user object for response**
     const safeUser = {
       id: user.id,
-      email: user.email,
-      username: user.username,
       firstName: user.firstName,
       lastName: user.lastName,
+      email: user.email,
+      username: user.username,
     };
 
+    // **Set token cookie**
     await setTokenCookie(res, safeUser);
 
+    // **Return successful login response**
     return res.status(200).json({ user: safeUser });
 
   } catch (error) {
