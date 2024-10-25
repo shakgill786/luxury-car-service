@@ -24,59 +24,48 @@ const validateLogin = [
 router.post('/', validateLogin, async (req, res, next) => {
   const { credential, password } = req.body;
 
-  try {
-    const user = await User.unscoped().findOne({
-      where: {
-        [Op.or]: [{ username: credential }, { email: credential }],
-      },
-    });
-
-    if (!user || !bcrypt.compareSync(password, user.hashedPassword.toString())) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+  const user = await User.unscoped().findOne({
+    where: {
+      [Op.or]: [{ username: credential }, { email: credential }],
     }
+  });
 
-    const safeUser = {
-      id: user.id,
-      email: user.email,
-      username: user.username,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    };
-
-    await setTokenCookie(res, safeUser);
-
-    return res.json({ user: safeUser });
-
-  } catch (error) {
-    console.error('Log-In Error:', error);
-    return res.status(500).json({ message: 'Server Error', errors: error.errors || [] });
+  if (!user || !bcrypt.compareSync(password, user.hashedPassword.toString())) {
+    return res.status(401).json({ message: "Invalid credentials" });
   }
-});
 
-// **Log Out a User**
-router.delete('/', (_req, res) => {
-  res.clearCookie('token');
-  return res.json({ message: 'Successfully logged out' });
+  const safeUser = {
+    id: user.id,
+    email: user.email,
+    username: user.username,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt
+  };
+
+  await setTokenCookie(res, safeUser);
+
+  return res.json({ user: safeUser });
 });
 
 // **Restore Session User (Get Current User)**
 router.get('/', restoreUser, (req, res) => {
   const { user } = req;
+
   if (user) {
     const safeUser = {
       id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
       email: user.email,
       username: user.username,
+      firstName: user.firstName,
+      lastName: user.lastName,
       createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
+      updatedAt: user.updatedAt
     };
     return res.json({ user: safeUser });
   } else {
-    return res.json({ user: null });
+    return res.status(401).json({ message: "Authentication required" });
   }
 });
 

@@ -31,7 +31,7 @@ const setTokenCookie = (res, user) => {
 };
 
 // Middleware to restore the user session based on JWT token
-const restoreUser = (req, res, next) => {
+const restoreUser = async (req, res, next) => {
   const { token } = req.cookies;
   req.user = null;
 
@@ -39,29 +39,26 @@ const restoreUser = (req, res, next) => {
     return next(); // If no token, move to the next middleware
   }
 
-  return jwt.verify(token, secret, null, async (err, jwtPayload) => {
-    if (err) {
-      console.error('JWT verification failed:', err);
-      return next(); // If token is invalid or expired, skip to the next middleware
+  try {
+    const jwtPayload = jwt.verify(token, secret);
+    const { id } = jwtPayload.data;
+    
+    const user = await User.findByPk(id, {
+      attributes: ['id', 'email', 'username', 'firstName', 'lastName', 'createdAt', 'updatedAt'], // Fetch only necessary fields
+    });
+
+    if (user) {
+      req.user = user; // Attach user to request
+    } else {
+      res.clearCookie('token'); // Clear the token if user isn't found
     }
 
-    try {
-      const { id } = jwtPayload.data;
-      req.user = await User.findByPk(id, {
-        attributes: ['id', 'email', 'username', 'createdAt', 'updatedAt'], // Fetch only necessary fields
-      });
-
-      if (!req.user) {
-        res.clearCookie('token'); // Clear the token if user isn't found
-      }
-    } catch (e) {
-      console.error('Error while fetching user:', e);
-      res.clearCookie('token');
-      return next(); // Clear the token and move on in case of error
-    }
-
-    return next(); // Proceed to the next middleware if everything is OK
-  });
+    return next();
+  } catch (err) {
+    console.error('JWT verification failed:', err);
+    res.clearCookie('token');
+    return next(); // If token is invalid or expired, skip to the next middleware
+  }
 };
 
 // Middleware for requiring user authentication
