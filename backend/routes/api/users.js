@@ -36,15 +36,18 @@ const validateSignup = [
 
 // **Sign Up Route**
 router.post('/', validateSignup, async (req, res, next) => {
-  const { email, password, username, firstName, lastName } = req.body;
+  const { email, password, username, firstName, lastName } = req.body || {};
+
+  if (!email || !password || !username || !firstName || !lastName) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
 
   try {
-    // Check if email or username already exists
     const existingEmail = await User.findOne({ where: { email } });
     const existingUsername = await User.findOne({ where: { username } });
 
     if (existingEmail || existingUsername) {
-      return res.status(500).json({
+      return res.status(409).json({
         message: 'User already exists',
         errors: {
           ...(existingEmail && { email: 'User with that email already exists' }),
@@ -52,6 +55,23 @@ router.post('/', validateSignup, async (req, res, next) => {
         },
       });
     }
+
+    // Proceed with user creation...
+    const newUser = await User.create({ email, password, username, firstName, lastName });
+
+    res.status(201).json({
+      id: newUser.id,
+      email: newUser.email,
+      username: newUser.username,
+      firstName: newUser.firstName,
+      lastName: newUser.lastName,
+      createdAt: newUser.createdAt,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 
     // Hash the password
     const hashedPassword = bcrypt.hashSync(password, 10);
