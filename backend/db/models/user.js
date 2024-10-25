@@ -34,10 +34,10 @@ module.exports = (sequelize, DataTypes) => {
         },
       },
       hashedPassword: {
-        type: DataTypes.STRING.BINARY,
+        type: DataTypes.STRING(64), // Changed from STRING.BINARY to STRING(64)
         allowNull: false,
         validate: {
-          len: [60, 60],
+          len: [60, 60], // Ensure correct hashed password length
         },
       },
       firstName: {
