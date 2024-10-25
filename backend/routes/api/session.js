@@ -24,21 +24,30 @@ const validateLogin = [
 router.post('/', validateLogin, async (req, res, next) => {
   const { credential, password } = req.body;
 
-  const user = await User.unscoped().findOne({
-    where: {
-      [Op.or]: { username: credential, email: credential }
-    }
-  });
-
-  // **Invalid Credentials Error Handling**
-  if (!user || !bcrypt.compareSync(password, user.hashedPassword.toString())) {
-    return res.status(401).json({
-      message: 'Invalid credentials',
-      errors: { credential: 'The provided credentials were invalid.' }
+  // **Check if credential and password are provided**
+  if (!credential || !password) {
+    return res.status(400).json({
+      message: "Bad Request",
+      errors: {
+        credential: !credential ? "Email or username is required" : undefined,
+        password: !password ? "Password is required" : undefined,
+      }
     });
   }
 
-  // **Prepare Safe User Object for Response**
+  const user = await User.unscoped().findOne({
+    where: {
+      [Op.or]: [{ username: credential }, { email: credential }]
+    }
+  });
+
+  // **Invalid Credentials Handling**
+  if (!user || !bcrypt.compareSync(password, user.hashedPassword.toString())) {
+    return res.status(401).json({
+      message: "Invalid credentials"
+    });
+  }
+
   const safeUser = {
     id: user.id,
     email: user.email,
@@ -62,7 +71,7 @@ router.delete('/', (_req, res) => {
 // **Restore Session User**
 router.get('/', restoreUser, (req, res) => {
   const { user } = req;
-  
+
   if (user) {
     const safeUser = {
       id: user.id,
