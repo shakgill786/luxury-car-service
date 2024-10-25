@@ -20,6 +20,7 @@ const validateSpot = [
   handleValidationErrors,
 ];
 
+// **Get All Spots**
 router.get('/', async (req, res) => {
   let { page, size, minLat, maxLat, minLng, maxLng, minPrice, maxPrice } = req.query;
 
@@ -80,12 +81,13 @@ router.get('/', async (req, res) => {
     name: spot.name,
     description: spot.description,
     price: spot.price,
+    createdAt: spot.createdAt ? spot.createdAt.toISOString() : null,
+    updatedAt: spot.updatedAt ? spot.updatedAt.toISOString() : null,
     previewImage: spot.SpotImages?.[0]?.url || null,
   }));
 
   res.json({ Spots: formattedSpots, page, size });
 });
-
 
 // **Get All Spots Owned by the Current User**
 router.get('/current', requireAuth, async (req, res) => {
@@ -108,6 +110,8 @@ router.get('/current', requireAuth, async (req, res) => {
     name: spot.name,
     description: spot.description,
     price: spot.price,
+    createdAt: spot.createdAt ? spot.createdAt.toISOString() : null,
+    updatedAt: spot.updatedAt ? spot.updatedAt.toISOString() : null,
     previewImage: spot.SpotImages?.[0]?.url || null
   }));
 
@@ -144,8 +148,8 @@ router.get('/:spotId', async (req, res) => {
     name: spot.name,
     description: spot.description,
     price: spot.price,
-    createdAt: spot.createdAt,
-    updatedAt: spot.updatedAt,
+    createdAt: spot.createdAt ? spot.createdAt.toISOString() : null,
+    updatedAt: spot.updatedAt ? spot.updatedAt.toISOString() : null,
     numReviews,
     avgStarRating: parseFloat(avgRating.toFixed(2)),
     SpotImages: spot.SpotImages,
