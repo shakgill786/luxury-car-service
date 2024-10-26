@@ -2,13 +2,13 @@
 
 let options = {};
 if (process.env.NODE_ENV === 'production') {
-  options.schema = process.env.SCHEMA; // Add schema only for production
+  options.schema = process.env.SCHEMA;
 }
 options.tableName = 'Spots';
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('Spots', {
+    await queryInterface.createTable(options, {
       id: {
         allowNull: false,
         autoIncrement: true,
@@ -18,7 +18,7 @@ module.exports = {
       ownerId: {
         type: Sequelize.INTEGER,
         allowNull: false,
-        references: { model: 'Users', key: 'id' }, // Foreign key
+        references: { model: 'Users', key: 'id' }, 
         onDelete: 'CASCADE',
       },
       address: {
@@ -67,11 +67,11 @@ module.exports = {
         type: Sequelize.DATE,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
       },
-    }, options); // Pass options here
+    },); 
   },
 
   async down(queryInterface, Sequelize) {
-    options.tableName = 'Spots'; // Set tableName in down method
+    options.tableName = 'Spots'; 
     await queryInterface.dropTable(options);
   },
 };

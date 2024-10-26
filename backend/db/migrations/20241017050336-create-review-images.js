@@ -8,7 +8,7 @@ options.tableName = 'ReviewImages';
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('ReviewImages', {
+    await queryInterface.createTable(options, {
       id: {
         allowNull: false,
         autoIncrement: true,
@@ -35,11 +35,11 @@ module.exports = {
         type: Sequelize.DATE,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
       },
-    }, options); // Pass options here
+    },);
   },
 
   async down(queryInterface, Sequelize) {
-    options.tableName = 'ReviewImages'; // Set tableName for down method
+    options.tableName = 'ReviewImages'; 
     await queryInterface.dropTable(options);
   },
 };

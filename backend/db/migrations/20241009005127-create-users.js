@@ -8,7 +8,7 @@ options.tableName = 'Users';
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('Users', {
+    await queryInterface.createTable(options, {
       id: {
         allowNull: false,
         autoIncrement: true,
@@ -47,7 +47,7 @@ module.exports = {
         type: Sequelize.DATE,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
       },
-    }, options); // Pass options here
+    }, );
   },
 
   async down(queryInterface, Sequelize) {
