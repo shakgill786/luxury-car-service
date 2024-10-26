@@ -9,7 +9,7 @@ const usersRouter = require('./users');
 const spotsRouter = require('./spots');
 const reviewsRouter = require('./reviews');
 const bookingsRouter = require('./bookings');
-const imagesRouter = require('./images');
+const reviewImagesRouter = require('./review-images'); // Ensure consistent naming
 
 // **Create Express Router Instance**
 const router = express.Router();
@@ -24,6 +24,7 @@ router.use('/reviews', reviewsRouter);
 router.use('/spots', spotsRouter);
 router.use('/session', sessionRouter); // Handles login/logout routes
 router.use('/users', usersRouter); // Handles user registration routes
+router.use('/review-images', reviewImagesRouter); // Review image handling
 
 // **Test Route: Set Token Cookie**
 router.get('/set-token-cookie', async (_req, res) => {

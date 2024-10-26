@@ -184,7 +184,7 @@ const findAndDeleteImage = async (model, imageId, ownerKey, req, res) => {
  * Delete a Review Image
  * Requires authentication and review ownership verification.
  */
-router.delete('/review-images/:imageId', requireAuth, async (req, res) => {
+router.delete('/:imageId', requireAuth, async (req, res) => {
   await findAndDeleteImage(ReviewImage, req.params.imageId, 'userId', req, res);
 });
 
