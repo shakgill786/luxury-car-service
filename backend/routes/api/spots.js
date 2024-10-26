@@ -75,32 +75,65 @@ router.get('/', async (req, res) => {
   res.json({ Spots: formattedSpots, page, size });
 });
 
-// **Get All Spots Owned by the Current User**
+// GET /api/spots/current
 router.get('/current', requireAuth, async (req, res) => {
-  const { user } = req;
+  try {
+    const { user } = req; // Get the authenticated user
 
-  const spots = await Spot.findAll({
-    where: { ownerId: user.id },
-    include: [{ model: SpotImage, where: { preview: true }, required: false }]
-  });
+    // Fetch all spots owned by the current user, including images and reviews
+    const spots = await Spot.findAll({
+      where: { ownerId: user.id },
+      include: [
+        {
+          model: SpotImage,
+          where: { preview: true },
+          required: false, // Optional inclusion
+          attributes: ['url'],
+        },
+        {
+          model: Review,
+          attributes: [], // Only aggregate rating needed
+        },
+      ],
+      attributes: {
+        include: [
+          // Add avgRating as an attribute using Sequelize literal
+          [
+            Sequelize.fn('AVG', Sequelize.col('Reviews.stars')),
+            'avgRating',
+          ],
+        ],
+      },
+      group: ['Spot.id', 'SpotImages.url'], // Avoid duplicate rows by grouping
+    });
 
-  const formattedSpots = spots.map(spot => ({
-    id: spot.id,
-    ownerId: spot.ownerId,
-    address: spot.address,
-    city: spot.city,
-    state: spot.state,
-    country: spot.country,
-    lat: spot.lat,
-    lng: spot.lng,
-    name: spot.name,
-    description: spot.description,
-    price: spot.price,
-    previewImage: spot.SpotImages?.[0]?.url || null
-  }));
+    // Format the spots to match the expected response structure
+    const formattedSpots = spots.map(spot => ({
+      id: spot.id,
+      ownerId: spot.ownerId,
+      address: spot.address,
+      city: spot.city,
+      state: spot.state,
+      country: spot.country,
+      lat: spot.lat,
+      lng: spot.lng,
+      name: spot.name,
+      description: spot.description,
+      price: spot.price,
+      previewImage: spot.SpotImages?.[0]?.url || null,
+      avgRating: spot.dataValues.avgRating || 0,
+      createdAt: spot.createdAt,
+      updatedAt: spot.updatedAt,
+    }));
 
-  res.json({ Spots: formattedSpots });
+    // Send the formatted spots in the response
+    res.status(200).json({ Spots: formattedSpots });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Something went wrong.' });
+  }
 });
+
 
 // **Get Spot Details by ID**
 router.get('/:spotId', async (req, res) => {
