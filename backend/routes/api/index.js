@@ -18,7 +18,7 @@ const router = express.Router();
 router.use(restoreUser);
 
 // **Register API Routes**
-router.use('/images', imagesRouter);
+//router.use('/images', imagesRouter);
 router.use('/bookings', bookingsRouter);
 router.use('/reviews', reviewsRouter);
 router.use('/spots', spotsRouter);
