@@ -1,3 +1,4 @@
+// backend/routes/index.js
 const express = require('express');
 const router = express.Router();
 const apiRouter = require('./api');
@@ -21,17 +22,11 @@ router.get('/', (req, res) => {
   });
 });
 
-// **Route to Restore CSRF Token (Development Only)**
-router.get('/api/csrf/restore', (req, res) => {
-  try {
-    console.log('CSRF route hit'); // Debugging log
-    const csrfToken = req.csrfToken(); // Generate CSRF token
-    res.cookie('XSRF-TOKEN', csrfToken);
-    res.status(200).json({ 'XSRF-Token': csrfToken });
-  } catch (error) {
-    console.error('Error generating CSRF token:', error);
-    res.status(500).json({ message: 'Failed to generate CSRF token' });
-  }
+// **Route to Restore CSRF Token**
+router.get('/csrf/restore', (req, res) => {
+  const csrfToken = req.csrfToken(); // Generate CSRF token
+  res.cookie('XSRF-TOKEN', csrfToken);
+  res.status(200).json({ 'XSRF-Token': csrfToken });
 });
 
 module.exports = router;

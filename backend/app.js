@@ -39,11 +39,19 @@ app.use(
   csurf({
     cookie: {
       secure: isProduction,
-      sameSite: isProduction && "Lax",
+      sameSite: isProduction ? "Lax" : "Strict",
       httpOnly: true
     }
   })
 );
+
+// Middleware to include CSRF token in responses - Place after CSRF initialization
+app.use((req, res, next) => {
+  const csrfToken = req.csrfToken();
+  res.cookie('XSRF-TOKEN', csrfToken);
+  res.locals.csrfToken = csrfToken; // Optional: Use in views
+  next();
+});
 
 // Restore user session
 app.use(restoreUser);
@@ -59,14 +67,6 @@ app.use((_req, _res, next) => {
   err.errors = { message: "The requested resource couldn't be found." };
   err.status = 404;
   next(err);
-});
-
-// Middleware to include CSRF token in responses
-app.use((req, res, next) => {
-  const csrfToken = req.csrfToken();
-  res.cookie('XSRF-TOKEN', csrfToken);
-  res.locals.csrfToken = csrfToken; // Optional: Use in views
-  next();
 });
 
 // Import Sequelize ValidationError

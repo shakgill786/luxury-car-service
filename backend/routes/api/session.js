@@ -1,8 +1,9 @@
+// backend/routes/api/session.js
 const express = require('express');
 const { Op } = require('sequelize');
 const bcrypt = require('bcryptjs');
 const { setTokenCookie, restoreUser } = require('../../utils/auth');
-const { User } = require('../../../backend/db/models');
+const { User } = require('../../db/models');
 const { check } = require('express-validator');
 const { handleValidationErrors } = require('../../utils/validation');
 
@@ -43,8 +44,8 @@ router.post('/', validateLogin, async (req, res, next) => {
     updatedAt: user.updatedAt
   };
 
-  const session_id = await setTokenCookie(res, safeUser);
-  return res.json({ user: safeUser, session_id });
+  await setTokenCookie(res, user);
+  return res.json({ user: safeUser });
 });
 
 // Restore Session User (Get Current User)
@@ -63,7 +64,7 @@ router.get('/', restoreUser, (req, res) => {
     };
     return res.status(200).json({ user: safeUser });
   } else {
-    return res.status(401).json({ message: "Authentication required" });
+    return res.status(200).json({ user: null });
   }
 });
 

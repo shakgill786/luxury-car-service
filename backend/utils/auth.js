@@ -42,7 +42,7 @@ const restoreUser = async (req, res, next) => {
   try {
     const jwtPayload = jwt.verify(token, secret);
     const { id } = jwtPayload.data;
-    
+
     const user = await User.findByPk(id, {
       attributes: ['id', 'email', 'username', 'firstName', 'lastName', 'createdAt', 'updatedAt'], // Fetch only necessary fields
     });
@@ -55,7 +55,6 @@ const restoreUser = async (req, res, next) => {
 
     return next();
   } catch (err) {
-    console.error('JWT verification failed:', err);
     res.clearCookie('token');
     return next(); // If token is invalid or expired, skip to the next middleware
   }
