@@ -3,7 +3,7 @@ const config = require('./index'); // Ensure './index' exports the necessary env
 module.exports = {
   development: {
     dialect: 'sqlite',
-    storage: './db/dev.sqlite',  // SQLite for development
+    storage: './backend/db/dev.sqlite',  // SQLite for development
     seederStorage: 'sequelize', // Stores seed data in SequelizeMeta
     logQueryParameters: true,   // Log query parameters for debugging
     typeValidation: true,       // Enable strict type validation
