@@ -6,6 +6,68 @@ const { handleValidationErrors } = require('../../utils/validation');
 
 const router = express.Router();
 
+
+// POST /api/spots/:spotId/reviews
+router.post('/:spotId/reviews', requireAuth, async (req, res) => {
+  const { spotId } = req.params;
+  const { review, stars } = req.body;
+  const { user } = req; // user object is attached by requireAuth middleware
+
+  try {
+    // Check if the spot exists
+    const spot = await Spot.findByPk(spotId);
+    if (!spot) {
+      return res.status(404).json({
+        message: "Spot couldn't be found",
+      });
+    }
+
+    // Check if a review from the current user already exists for this spot
+    const existingReview = await Review.findOne({
+      where: { spotId, userId: user.id },
+    });
+    if (existingReview) {
+      return res.status(500).json({
+        message: 'User already has a review for this spot',
+      });
+    }
+
+    // Validate the input
+    if (!review) {
+      return res.status(400).json({
+        message: 'Bad Request',
+        errors: {
+          review: 'Review text is required',
+        },
+      });
+    }
+    if (stars < 1 || stars > 5 || !Number.isInteger(stars)) {
+      return res.status(400).json({
+        message: 'Bad Request',
+        errors: {
+          stars: 'Stars must be an integer from 1 to 5',
+        },
+      });
+    }
+
+    // Create the new review
+    const newReview = await Review.create({
+      userId: user.id,
+      spotId,
+      review,
+      stars,
+    });
+
+    // Return successful response
+    return res.status(201).json(newReview);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: 'An unexpected error occurred',
+    });
+  }
+});
+
 // **Validation Middleware for Review Updates**
 const validateReview = [
   check('review')
