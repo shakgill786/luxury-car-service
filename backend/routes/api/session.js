@@ -1,51 +1,36 @@
+// backend/routes/api/session.js
 const express = require('express');
-const { Op } = require('sequelize');
 const bcrypt = require('bcryptjs');
+const { User } = require('../../db/models');
 const { setTokenCookie, restoreUser } = require('../../utils/auth');
-const { User } = require('../../../backend/db/models');
 const { check } = require('express-validator');
 const { handleValidationErrors } = require('../../utils/validation');
 
 const router = express.Router();
 
-// **Login Validation Middleware**
 const validateLogin = [
   check('credential')
     .exists({ checkFalsy: true })
     .notEmpty()
-    .withMessage('Please provide a valid email or username.'),
+    .withMessage('Email or username is required.'),
   check('password')
     .exists({ checkFalsy: true })
-    .withMessage('Please provide a password.'),
-  handleValidationErrors
+    .withMessage('Password is required.'),
+  handleValidationErrors,
 ];
 
 // **Log In a User**
-router.post('/', validateLogin, async (req, res, next) => {
+router.post('/', validateLogin, async (req, res) => {
   const { credential, password } = req.body;
-
-  // **Check if credential and password are provided**
-  if (!credential || !password) {
-    return res.status(400).json({
-      message: "Bad Request",
-      errors: {
-        credential: !credential ? "Email or username is required" : undefined,
-        password: !password ? "Password is required" : undefined,
-      }
-    });
-  }
 
   const user = await User.unscoped().findOne({
     where: {
-      [Op.or]: [{ username: credential }, { email: credential }]
-    }
+      [Op.or]: [{ username: credential }, { email: credential }],
+    },
   });
 
-  // **Invalid Credentials Handling**
   if (!user || !bcrypt.compareSync(password, user.hashedPassword.toString())) {
-    return res.status(401).json({
-      message: "Invalid credentials"
-    });
+    return res.status(401).json({ message: 'Invalid credentials' });
   }
 
   const safeUser = {
@@ -53,22 +38,14 @@ router.post('/', validateLogin, async (req, res, next) => {
     email: user.email,
     username: user.username,
     firstName: user.firstName,
-    lastName: user.lastName
+    lastName: user.lastName,
   };
 
-  // **Set Token Cookie**
-  await setTokenCookie(res, safeUser);
-
+  await setTokenCookie(res, user);
   return res.json({ user: safeUser });
 });
 
-// **Log Out a User**
-router.delete('/', (_req, res) => {
-  res.clearCookie('token');
-  return res.json({ message: 'Successfully logged out' });
-});
-
-// **Restore Session User**
+// **Get Current User**
 router.get('/', restoreUser, (req, res) => {
   const { user } = req;
 
@@ -78,11 +55,11 @@ router.get('/', restoreUser, (req, res) => {
       email: user.email,
       username: user.username,
       firstName: user.firstName,
-      lastName: user.lastName
+      lastName: user.lastName,
     };
-    return res.json({ user: safeUser });
+    return res.status(200).json({ user: safeUser });
   } else {
-    return res.json({ user: null });
+    return res.status(200).json({ user: null });
   }
 });
 

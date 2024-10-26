@@ -1,100 +1,101 @@
 const express = require('express');
-require('express-async-errors'); // For handling async route errors
-const morgan = require('morgan'); // For logging HTTP requests
+require('express-async-errors'); // To catch async route errors
+const morgan = require('morgan'); // Logging HTTP requests
 const cors = require('cors'); // Cross-Origin Resource Sharing
 const csurf = require('csurf'); // CSRF protection
 const helmet = require('helmet'); // Security middleware
-const cookieParser = require('cookie-parser'); // To parse cookies
+const cookieParser = require('cookie-parser'); // Cookie parsing
 const { restoreUser } = require('./utils/auth'); // Restore user session
+const { ValidationError } = require('sequelize'); // Sequelize error handler
 
-// Import the config file
 const { environment } = require('./config');
 const isProduction = environment === 'production';
 
-// Initialize the express app
+// Initialize Express app
 const app = express();
 
-// Connect the morgan middleware for logging
+// Setup logger middleware
 app.use(morgan('dev'));
 
-// Middleware for parsing cookies and JSON request bodies
+// Middleware for parsing cookies and JSON requests
 app.use(cookieParser());
 app.use(express.json());
 
-// Security Middleware
+// Enable CORS only in development
 if (!isProduction) {
-  // Enable CORS only in development
   app.use(cors());
 }
 
-// Use helmet for better security
+// Apply security headers with Helmet
 app.use(
   helmet.crossOriginResourcePolicy({
-    policy: "cross-origin"
+    policy: 'cross-origin',
   })
 );
 
-// Set the _csrf token and create req.csrfToken method
+// Initialize CSRF protection
 app.use(
   csurf({
     cookie: {
-      secure: isProduction,
-      sameSite: isProduction ? "Lax" : "Strict",
-      httpOnly: true
-    }
+      secure: isProduction, // Secure cookies in production
+      sameSite: isProduction ? 'Lax' : 'Strict', // Cross-site handling
+      httpOnly: true, // Prevent JavaScript access to cookies
+    },
   })
 );
 
-// Middleware to include CSRF token in responses - Place after CSRF initialization
+// Middleware to include CSRF token in responses (after CSRF initialization)
 app.use((req, res, next) => {
-  const csrfToken = req.csrfToken();
-  res.cookie('XSRF-TOKEN', csrfToken);
-  res.locals.csrfToken = csrfToken; // Optional: Use in views
-  next();
+  try {
+    const csrfToken = req.csrfToken(); // Generate CSRF token
+    res.cookie('XSRF-TOKEN', csrfToken); // Set token in cookie
+    res.locals.csrfToken = csrfToken; // Optional: Use in templates
+    next();
+  } catch (error) {
+    console.error('CSRF Token Error:', error); // Handle CSRF errors gracefully
+    next(error);
+  }
 });
 
 // Restore user session
 app.use(restoreUser);
 
-// Import routes and apply them to the app
-const routes = require('./routes');  // Import the routes file
-app.use(routes);  // Use the imported routes
+// Import and apply routes
+const routes = require('./routes');
+app.use(routes);
 
-// Catch unhandled requests and forward to error handler.
+// Handle 404 errors for unhandled requests
 app.use((_req, _res, next) => {
   const err = new Error("The requested resource couldn't be found.");
-  err.title = "Resource Not Found";
+  err.title = 'Resource Not Found';
   err.errors = { message: "The requested resource couldn't be found." };
   err.status = 404;
   next(err);
 });
 
-// Import Sequelize ValidationError
-const { ValidationError } = require('sequelize');
-
-// Process Sequelize errors
+// Handle Sequelize validation errors
 app.use((err, _req, _res, next) => {
   if (err instanceof ValidationError) {
-    let errors = {};
-    for (let error of err.errors) {
+    const errors = {};
+    err.errors.forEach((error) => {
       errors[error.path] = error.message;
-    }
+    });
     err.title = 'Validation Error';
     err.errors = errors;
   }
   next(err);
 });
 
-// Error formatter
+// Error formatter middleware
 app.use((err, _req, res, _next) => {
   res.status(err.status || 500);
   res.json({
     title: err.title || 'Server Error',
     message: err.message,
-    errors: err.errors,
-    stack: isProduction ? null : err.stack
+    errors: err.errors || {},
+    stack: isProduction ? null : err.stack, 
   });
 });
 
-// Export the app
+// Export the Express app
 module.exports = app;

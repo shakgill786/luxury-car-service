@@ -5,72 +5,67 @@ const { User } = require('../db/models');
 
 const { secret, expiresIn } = jwtConfig;
 
-// **Set JWT Token in a Cookie**
+// Sends a JWT Cookie
 const setTokenCookie = (res, user) => {
   const safeUser = {
     id: user.id,
     email: user.email,
     username: user.username,
-    firstName: user.firstName,  // Added firstName
-    lastName: user.lastName,    // Added lastName
+    firstName: user.firstName,
+    lastName: user.lastName,
   };
-
-  // Generate a JWT token
-  const token = jwt.sign({ data: safeUser }, secret, { expiresIn: parseInt(expiresIn) });
+  const token = jwt.sign(
+    { data: safeUser },
+    secret,
+    { expiresIn: parseInt(expiresIn) }
+  );
 
   const isProduction = process.env.NODE_ENV === 'production';
 
-  // Set the token as an HTTP-only cookie
   res.cookie('token', token, {
-    maxAge: expiresIn * 1000, // Convert expiresIn to milliseconds
-    httpOnly: true,            // Prevent client-side access to the token
-    secure: isProduction,       // Use secure cookies in production
-    sameSite: isProduction ? 'Lax' : 'Strict', // Mitigate CSRF attacks
+    maxAge: expiresIn * 1000, // Max age in milliseconds
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'Lax' : 'Strict',
   });
 
   return token;
 };
 
-// **Middleware to Restore User Session**
+// Middleware to restore user from JWT
 const restoreUser = async (req, res, next) => {
   const { token } = req.cookies;
-  req.user = null; // Initialize user as null
+  req.user = null;
 
-  if (!token) return next(); // If no token, skip to the next middleware
+  if (!token) {
+    return next();
+  }
 
   try {
-    // Verify the token
-    const jwtPayload = jwt.verify(token, secret);
-    const { id } = jwtPayload.data;
-
-    // Fetch the user by ID with only necessary attributes
-    const user = await User.findByPk(id, {
-      attributes: ['id', 'email', 'username', 'firstName', 'lastName', 'createdAt', 'updatedAt'],
+    const payload = jwt.verify(token, secret);
+    const user = await User.findByPk(payload.data.id, {
+      attributes: ['id', 'email', 'username', 'firstName', 'lastName'],
     });
 
     if (user) {
-      req.user = user; // Attach user to request if found
+      req.user = user;
     } else {
-      res.clearCookie('token'); // Clear token if user is not found
+      res.clearCookie('token');
     }
-
-    return next();
+    next();
   } catch (err) {
-    // Clear token if it’s invalid or expired
     res.clearCookie('token');
-    return next();
+    next();
   }
 };
 
-// **Middleware for Requiring Authentication**
-const requireAuth = (req, _res, next) => {
-  if (req.user) return next(); // If user is authenticated, proceed
+// Middleware for requiring authentication
+const requireAuth = (req, res, next) => {
+  if (req.user) return next();
 
   const err = new Error('Authentication required');
-  err.title = 'Authentication required';
-  err.errors = { message: 'Authentication required' };
   err.status = 401;
-  return next(err); // Pass the error to the next middleware
+  next(err);
 };
 
 module.exports = { setTokenCookie, restoreUser, requireAuth };
