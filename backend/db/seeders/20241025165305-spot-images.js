@@ -19,7 +19,7 @@ module.exports = {
 
     const spotIds = spots[0]; // Extract the array of spot IDs
 
-    await queryInterface.bulkInsert('SpotImages', [
+    await queryInterface.bulkInsert('SpotImage', [
       {
         spotId: spotIds[0].id, // First spot ID
         url: 'https://example.com/spot1.jpg',

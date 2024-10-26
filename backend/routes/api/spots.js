@@ -75,7 +75,7 @@ router.get('/', async (req, res) => {
     price: spot.price,
     createdAt: spot.createdAt ? spot.createdAt.toISOString() : null,
     updatedAt: spot.updatedAt ? spot.updatedAt.toISOString() : null,
-    previewImage: spot.SpotImages?.[0]?.url || null,
+    previewImage: spot.SpotImage?.[0]?.url || null,
   }));
 
   res.json({ Spots: formattedSpots, page, size });
@@ -104,7 +104,7 @@ router.get('/current', requireAuth, async (req, res) => {
     price: spot.price,
     createdAt: spot.createdAt ? spot.createdAt.toISOString() : null,
     updatedAt: spot.updatedAt ? spot.updatedAt.toISOString() : null,
-    previewImage: spot.SpotImages?.[0]?.url || null,
+    previewImage: spot.SpotImage?.[0]?.url || null,
   }));
 
   res.json({ Spots: formattedSpots });
@@ -148,7 +148,7 @@ router.get('/:spotId', async (req, res) => {
     updatedAt: spot.updatedAt ? spot.updatedAt.toISOString() : null,
     numReviews,
     avgStarRating,
-    SpotImages: spot.SpotImages,
+    SpotImage: spot.SpotImage,
     Owner: spot.Owner,
   };
 

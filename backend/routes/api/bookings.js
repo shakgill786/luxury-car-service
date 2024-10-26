@@ -49,7 +49,7 @@ router.get('/current', requireAuth, async (req, res) => {
       state: booking.Spot.state,
       country: booking.Spot.country,
       price: booking.Spot.price,
-      previewImage: booking.Spot.SpotImages?.[0]?.url || null
+      previewImage: booking.Spot.SpotImage?.[0]?.url || null
     }
   }));
 
