@@ -20,34 +20,23 @@ const validateSpot = [
   handleValidationErrors,
 ];
 
+// **Get All Spots with Query Parameters**
 router.get('/', async (req, res) => {
   let { page, size, minLat, maxLat, minLng, maxLng, minPrice, maxPrice } = req.query;
 
   // Query parameter validation
   const errors = {};
-  if (page && (isNaN(page) || page < 1)) {
-    errors.page = 'Page must be greater than or equal to 1';
-  }
-  if (size && (isNaN(size) || size < 1 || size > 20)) {
-    errors.size = 'Size must be between 1 and 20';
-  }
+  if (page && (isNaN(page) || page < 1)) errors.page = 'Page must be greater than or equal to 1';
+  if (size && (isNaN(size) || size < 1 || size > 20)) errors.size = 'Size must be between 1 and 20';
   if (minLat && isNaN(minLat)) errors.minLat = 'Minimum latitude is invalid';
   if (maxLat && isNaN(maxLat)) errors.maxLat = 'Maximum latitude is invalid';
   if (minLng && isNaN(minLng)) errors.minLng = 'Minimum longitude is invalid';
   if (maxLng && isNaN(maxLng)) errors.maxLng = 'Maximum longitude is invalid';
-  if (minPrice && (isNaN(minPrice) || minPrice < 0)) {
-    errors.minPrice = 'Minimum price must be greater than or equal to 0';
-  }
-  if (maxPrice && (isNaN(maxPrice) || maxPrice < 0)) {
-    errors.maxPrice = 'Maximum price must be greater than or equal to 0';
-  }
+  if (minPrice && (isNaN(minPrice) || minPrice < 0)) errors.minPrice = 'Minimum price must be greater than or equal to 0';
+  if (maxPrice && (isNaN(maxPrice) || maxPrice < 0)) errors.maxPrice = 'Maximum price must be greater than or equal to 0';
 
-  // If there are errors, return a 400 response with the error structure
   if (Object.keys(errors).length > 0) {
-    return res.status(400).json({
-      message: 'Bad Request',
-      errors,
-    });
+    return res.status(400).json({ message: 'Bad Request', errors });
   }
 
   page = parseInt(page) || 1;
@@ -68,7 +57,7 @@ router.get('/', async (req, res) => {
     include: [{ model: SpotImage, where: { preview: true }, required: false }],
   });
 
-  const formattedSpots = spots.map((spot) => ({
+  const formattedSpots = spots.map(spot => ({
     id: spot.id,
     ownerId: spot.ownerId,
     address: spot.address,
@@ -85,7 +74,6 @@ router.get('/', async (req, res) => {
 
   res.json({ Spots: formattedSpots, page, size });
 });
-
 
 // **Get All Spots Owned by the Current User**
 router.get('/current', requireAuth, async (req, res) => {

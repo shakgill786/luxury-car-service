@@ -35,31 +35,35 @@ router.post('/', validateLogin, async (req, res, next) => {
     });
   }
 
-  const user = await User.unscoped().findOne({
-    where: {
-      [Op.or]: [{ username: credential }, { email: credential }]
-    }
-  });
-
-  // **Invalid Credentials Handling**
-  if (!user || !bcrypt.compareSync(password, user.hashedPassword.toString())) {
-    return res.status(401).json({
-      message: "Invalid credentials"
+  try {
+    const user = await User.unscoped().findOne({
+      where: {
+        [Op.or]: [{ username: credential }, { email: credential }]
+      }
     });
+
+    // **Invalid Credentials Handling**
+    if (!user || !bcrypt.compareSync(password, user.hashedPassword.toString())) {
+      return res.status(401).json({
+        message: "Invalid credentials"
+      });
+    }
+
+    const safeUser = {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      firstName: user.firstName,
+      lastName: user.lastName
+    };
+
+    // **Set Token Cookie**
+    await setTokenCookie(res, safeUser);
+
+    return res.json({ user: safeUser });
+  } catch (err) {
+    next(err);
   }
-
-  const safeUser = {
-    id: user.id,
-    email: user.email,
-    username: user.username,
-    firstName: user.firstName,
-    lastName: user.lastName
-  };
-
-  // **Set Token Cookie**
-  await setTokenCookie(res, safeUser);
-
-  return res.json({ user: safeUser });
 });
 
 // **Log Out a User**
