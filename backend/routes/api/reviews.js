@@ -22,25 +22,6 @@ router.post('/:spotId/reviews', requireAuth, async (req, res) => {
       });
     }
 
-    // Check if a review from the current user already exists for this spot
-    const existingReview = await Review.findOne({
-      where: { spotId, userId: user.id },
-    });
-    if (existingReview) {
-      return res.status(500).json({
-        message: 'User already has a review for this spot',
-      });
-    }
-
-    // Validate the input
-    if (!review) {
-      return res.status(400).json({
-        message: 'Bad Request',
-        errors: {
-          review: 'Review text is required',
-        },
-      });
-    }
     if (stars < 1 || stars > 5 || !Number.isInteger(stars)) {
       return res.status(400).json({
         message: 'Bad Request',

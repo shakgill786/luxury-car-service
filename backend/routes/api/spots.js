@@ -276,7 +276,7 @@ const findAndDeleteImage = async (model, imageId, ownerKey, req, res) => {
  * Delete a Spot Image
  * Requires authentication and spot ownership verification.
  */
-router.delete('/spot-images/:imageId', requireAuth, async (req, res) => {
+router.delete('api/spot-images/:imageId', requireAuth, async (req, res) => {
   await findAndDeleteImage(SpotImage, req.params.imageId, 'ownerId', req, res);
 });
 
