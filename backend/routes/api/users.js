@@ -7,7 +7,6 @@ const { handleValidationErrors } = require('../../utils/validation');
 const { Op } = require('sequelize');
 const router = express.Router();
 
-// **Validation for Signup**
 const validateSignup = [
   check('email')
     .exists({ checkFalsy: true })
@@ -33,19 +32,6 @@ const validateSignup = [
   handleValidationErrors,
 ];
 
-// **Validation for Login**
-const validateLogin = [
-  check('credential')
-    .exists({ checkFalsy: true })
-    .notEmpty()
-    .withMessage('Please provide a valid email or username.'),
-  check('password')
-    .exists({ checkFalsy: true })
-    .withMessage('Please provide a password.'),
-  handleValidationErrors
-];
-
-// **Signup Route**
 router.post('/', validateSignup, async (req, res, next) => {
   const { email, password, username, firstName, lastName } = req.body;
 
@@ -96,73 +82,6 @@ router.post('/', validateSignup, async (req, res, next) => {
       errors: error.errors || [],
     });
   }
-});
-
-// **Login Route**
-router.post('/login', validateLogin, async (req, res, next) => {
-  const { credential, password } = req.body;
-
-  try {
-    const user = await User.unscoped().findOne({
-      where: {
-        [Op.or]: [{ username: credential }, { email: credential }],
-      },
-    });
-
-    if (!user || !bcrypt.compareSync(password, user.hashedPassword.toString())) {
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
-
-    const safeUser = {
-      id: user.id,
-      email: user.email,
-      username: user.username,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt
-    };
-
-    await setTokenCookie(res, user);
-
-    return res.json({ user: safeUser });
-
-  } catch (error) {
-    console.error('Log-In Error:', error);
-    return res.status(500).json({ message: 'Server Error', errors: error.errors || [] });
-  }
-});
-
-// **Get Current User Route**
-router.get('/me', restoreUser, async (req, res, next) => {
-  try {
-    const { user } = req;
-
-    if (user) {
-      const safeUser = {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt
-      };
-      return res.json({ user: safeUser });
-    } else {
-      return res.json({ user: null });
-    }
-
-  } catch (error) {
-    console.error('Get Current User Error:', error);
-    return res.status(500).json({ message: 'Server Error', errors: error.errors || [] });
-  }
-});
-
-// **Log Out a User**
-router.delete('/logout', (_req, res) => {
-  res.clearCookie('token');
-  return res.json({ message: 'Successfully logged out' });
 });
 
 module.exports = router;

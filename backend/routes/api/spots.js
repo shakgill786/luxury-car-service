@@ -7,7 +7,7 @@ const { handleValidationErrors } = require('../../utils/validation');
 
 const router = express.Router();
 
-// **Spot Validation Middleware**
+// Spot Validation Middleware
 const validateSpot = [
   check('address').exists({ checkFalsy: true }).withMessage('Street address is required'),
   check('city').exists({ checkFalsy: true }).withMessage('City is required'),
@@ -20,7 +20,7 @@ const validateSpot = [
   handleValidationErrors,
 ];
 
-// **Get All Spots**
+// Get All Spots
 router.get('/', async (req, res) => {
   let { page, size, minLat, maxLat, minLng, maxLng, minPrice, maxPrice } = req.query;
 
@@ -75,22 +75,22 @@ router.get('/', async (req, res) => {
     price: spot.price,
     createdAt: spot.createdAt ? spot.createdAt.toISOString() : null,
     updatedAt: spot.updatedAt ? spot.updatedAt.toISOString() : null,
-    previewImage: spot.SpotImage?.[0]?.url || null,
+    previewImage: spot.SpotImages?.[0]?.url || null,
   }));
 
   res.json({ Spots: formattedSpots, page, size });
 });
 
-// **Get Current User's Spots**
+// Get All Spots Owned by the Current User
 router.get('/current', requireAuth, async (req, res) => {
   const { user } = req;
 
   const spots = await Spot.findAll({
     where: { ownerId: user.id },
-    include: [{ model: SpotImage, where: { preview: true }, required: false }],
+    include: [{ model: SpotImage, where: { preview: true }, required: false }]
   });
 
-  const formattedSpots = spots.map((spot) => ({
+  const formattedSpots = spots.map(spot => ({
     id: spot.id,
     ownerId: spot.ownerId,
     address: spot.address,
@@ -104,13 +104,13 @@ router.get('/current', requireAuth, async (req, res) => {
     price: spot.price,
     createdAt: spot.createdAt ? spot.createdAt.toISOString() : null,
     updatedAt: spot.updatedAt ? spot.updatedAt.toISOString() : null,
-    previewImage: spot.SpotImage?.[0]?.url || null,
+    previewImage: spot.SpotImages?.[0]?.url || null
   }));
 
   res.json({ Spots: formattedSpots });
 });
 
-// **Get Spot by ID**
+// Get Spot Details by ID
 router.get('/:spotId', async (req, res) => {
   const { spotId } = req.params;
 
@@ -148,14 +148,14 @@ router.get('/:spotId', async (req, res) => {
     updatedAt: spot.updatedAt ? spot.updatedAt.toISOString() : null,
     numReviews,
     avgStarRating,
-    SpotImage: spot.SpotImage,
+    SpotImages: spot.SpotImages,
     Owner: spot.Owner,
   };
 
   res.json(formattedSpot);
 });
 
-// **Create a Spot**
+// Create a Spot
 router.post('/', requireAuth, validateSpot, async (req, res) => {
   const { user } = req;
   const { address, city, state, country, lat, lng, name, description, price } = req.body;
@@ -176,7 +176,7 @@ router.post('/', requireAuth, validateSpot, async (req, res) => {
   res.status(201).json(spot);
 });
 
-// **Edit a Spot**
+// Edit a Spot
 router.put('/:spotId', requireAuth, validateSpot, async (req, res) => {
   const { spotId } = req.params;
   const { address, city, state, country, lat, lng, name, description, price } = req.body;
@@ -195,7 +195,7 @@ router.put('/:spotId', requireAuth, validateSpot, async (req, res) => {
   res.json(spot);
 });
 
-// **Delete a Spot**
+// Delete a Spot
 router.delete('/:spotId', requireAuth, async (req, res) => {
   const { spotId } = req.params;
 

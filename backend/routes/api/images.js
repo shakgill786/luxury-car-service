@@ -4,10 +4,6 @@ const { SpotImage, Spot, ReviewImage, Review } = require('../../db/models');
 
 const router = express.Router();
 
-/**
- * Helper Function to Find and Delete Images
- * This handles deletion of both SpotImage and ReviewImage models.
- */
 const findAndDeleteImage = async (model, imageId, ownerKey, req, res) => {
   const image = await model.findByPk(imageId, {
     include: {
@@ -34,15 +30,11 @@ const findAndDeleteImage = async (model, imageId, ownerKey, req, res) => {
   }
 };
 
-/**
- * Add an Image to a Spot
- * Requires Authentication and Authorization
- */
+// Add an Image to a Spot
 router.post('/:spotId/images', requireAuth, async (req, res) => {
   const { spotId } = req.params;
   const { url, preview } = req.body;
 
-  // Validate input
   if (!url) {
     return res.status(400).json({
       message: 'Bad Request',
@@ -73,18 +65,12 @@ router.post('/:spotId/images', requireAuth, async (req, res) => {
   }
 });
 
-/**
- * Delete a Spot Image
- * Requires Authentication
- */
+// Delete a Spot Image
 router.delete('/spot-images/:imageId', requireAuth, async (req, res) => {
   await findAndDeleteImage(SpotImage, req.params.imageId, 'ownerId', req, res);
 });
 
-/**
- * Delete a Review Image
- * Requires Authentication
- */
+// Delete a Review Image
 router.delete('/review-images/:imageId', requireAuth, async (req, res) => {
   await findAndDeleteImage(ReviewImage, req.params.imageId, 'userId', req, res);
 });

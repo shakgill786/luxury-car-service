@@ -8,7 +8,6 @@ const { handleValidationErrors } = require('../../utils/validation');
 
 const router = express.Router();
 
-// Login Validation Middleware
 const validateLogin = [
   check('credential')
     .exists({ checkFalsy: true })
@@ -43,14 +42,9 @@ router.post('/', validateLogin, async (req, res, next) => {
     createdAt: user.createdAt,
     updatedAt: user.updatedAt
   };
-const session_id = await setTokenCookie(res, safeUser);
 
-  // Adjust the response to include session_id and user_id explicitly
-  return res.json({ 
-    user: safeUser,
-    session_id: session_id, // Add session ID
-    user_id: user.id.toString() // Ensure user_id is a string
-  });
+  const session_id = await setTokenCookie(res, safeUser);
+  return res.json({ user: safeUser, session_id });
 });
 
 // Restore Session User (Get Current User)
@@ -67,11 +61,7 @@ router.get('/', restoreUser, (req, res) => {
       createdAt: user.createdAt,
       updatedAt: user.updatedAt
     };
-    return res.status(200).json({ 
-      user: safeUser,
-      session_id: req.cookies.token, // Assuming the session ID is the JWT token
-      user_id: user.id.toString() // Ensure user_id is a string
-    });
+    return res.status(200).json({ user: safeUser });
   } else {
     return res.status(401).json({ message: "Authentication required" });
   }
