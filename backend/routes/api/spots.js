@@ -87,7 +87,7 @@ router.get('/current', requireAuth, async (req, res) => {
 
   const spots = await Spot.findAll({
     where: { ownerId: user.id },
-    include: [{ model: SpotImage, where: { preview: true }, required: false }]
+    include: [{ model: SpotImage, where: { preview: true }, required: false }],
   });
 
   const formattedSpots = spots.map(spot => ({
@@ -104,7 +104,7 @@ router.get('/current', requireAuth, async (req, res) => {
     price: spot.price,
     createdAt: spot.createdAt ? spot.createdAt.toISOString() : null,
     updatedAt: spot.updatedAt ? spot.updatedAt.toISOString() : null,
-    previewImage: spot.SpotImages?.[0]?.url || null
+    previewImage: spot.SpotImages?.[0]?.url || null,
   }));
 
   res.json({ Spots: formattedSpots });
@@ -125,6 +125,7 @@ router.get('/:spotId', async (req, res) => {
     return res.status(404).json({ message: "Spot couldn't be found" });
   }
 
+  // Calculate the number of reviews and average star rating
   const numReviews = await Review.count({ where: { spotId } });
   const avgRatingData = await Review.findOne({
     attributes: [[Sequelize.fn('AVG', Sequelize.col('stars')), 'avgRating']],
@@ -132,6 +133,7 @@ router.get('/:spotId', async (req, res) => {
   });
   const avgStarRating = avgRatingData ? parseFloat(avgRatingData.dataValues.avgRating).toFixed(2) : '0.00';
 
+  // Format the response object
   const formattedSpot = {
     id: spot.id,
     ownerId: spot.ownerId,

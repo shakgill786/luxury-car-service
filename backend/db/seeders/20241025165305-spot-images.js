@@ -6,7 +6,7 @@ let options = {};
 if (process.env.NODE_ENV === 'production') {
   options.schema = process.env.SCHEMA; // Define schema for production
 }
-options.tableName = 'SpotImage'; // Ensure correct table name in options
+options.tableName = 'SpotImages'; // Ensure correct table name in options
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
