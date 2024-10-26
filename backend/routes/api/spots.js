@@ -1,5 +1,5 @@
 const express = require('express');
-const { Op, Sequelize } = require('sequelize');
+const { Op } = require('sequelize');
 const { Spot, SpotImage, Review, User } = require('../../db/models');
 const { requireAuth } = require('../../utils/auth');
 const { check } = require('express-validator');
@@ -7,7 +7,7 @@ const { handleValidationErrors } = require('../../utils/validation');
 
 const router = express.Router();
 
-// Spot Validation Middleware
+// **Spot Validation Middleware**
 const validateSpot = [
   check('address').exists({ checkFalsy: true }).withMessage('Street address is required'),
   check('city').exists({ checkFalsy: true }).withMessage('City is required'),
@@ -20,14 +20,17 @@ const validateSpot = [
   handleValidationErrors,
 ];
 
-// Get All Spots
 router.get('/', async (req, res) => {
   let { page, size, minLat, maxLat, minLng, maxLng, minPrice, maxPrice } = req.query;
 
   // Query parameter validation
   const errors = {};
-  if (page && (isNaN(page) || page < 1)) errors.page = 'Page must be greater than or equal to 1';
-  if (size && (isNaN(size) || size < 1 || size > 20)) errors.size = 'Size must be between 1 and 20';
+  if (page && (isNaN(page) || page < 1)) {
+    errors.page = 'Page must be greater than or equal to 1';
+  }
+  if (size && (isNaN(size) || size < 1 || size > 20)) {
+    errors.size = 'Size must be between 1 and 20';
+  }
   if (minLat && isNaN(minLat)) errors.minLat = 'Minimum latitude is invalid';
   if (maxLat && isNaN(maxLat)) errors.maxLat = 'Maximum latitude is invalid';
   if (minLng && isNaN(minLng)) errors.minLng = 'Minimum longitude is invalid';
@@ -39,20 +42,24 @@ router.get('/', async (req, res) => {
     errors.maxPrice = 'Maximum price must be greater than or equal to 0';
   }
 
+  // If there are errors, return a 400 response with the error structure
   if (Object.keys(errors).length > 0) {
-    return res.status(400).json({ message: 'Bad Request', errors });
+    return res.status(400).json({
+      message: 'Bad Request',
+      errors,
+    });
   }
 
   page = parseInt(page) || 1;
   size = Math.min(parseInt(size) || 20, 20);
 
   const where = {};
-  if (minLat) where.lat = { [Op.gte]: parseFloat(minLat) };
-  if (maxLat) where.lat = { [Op.lte]: parseFloat(maxLat) };
-  if (minLng) where.lng = { [Op.gte]: parseFloat(minLng) };
-  if (maxLng) where.lng = { [Op.lte]: parseFloat(maxLng) };
-  if (minPrice) where.price = { [Op.gte]: parseFloat(minPrice) };
-  if (maxPrice) where.price = { [Op.lte]: parseFloat(maxPrice) };
+  if (minLat) where.lat = { [Op.gte]: minLat };
+  if (maxLat) where.lat = { [Op.lte]: maxLat };
+  if (minLng) where.lng = { [Op.gte]: minLng };
+  if (maxLng) where.lng = { [Op.lte]: maxLng };
+  if (minPrice) where.price = { [Op.gte]: minPrice };
+  if (maxPrice) where.price = { [Op.lte]: maxPrice };
 
   const spots = await Spot.findAll({
     where,
@@ -73,21 +80,20 @@ router.get('/', async (req, res) => {
     name: spot.name,
     description: spot.description,
     price: spot.price,
-    createdAt: spot.createdAt ? spot.createdAt.toISOString() : null,
-    updatedAt: spot.updatedAt ? spot.updatedAt.toISOString() : null,
     previewImage: spot.SpotImages?.[0]?.url || null,
   }));
 
   res.json({ Spots: formattedSpots, page, size });
 });
 
-// Get All Spots Owned by the Current User
+
+// **Get All Spots Owned by the Current User**
 router.get('/current', requireAuth, async (req, res) => {
   const { user } = req;
 
   const spots = await Spot.findAll({
     where: { ownerId: user.id },
-    include: [{ model: SpotImage, where: { preview: true }, required: false }],
+    include: [{ model: SpotImage, where: { preview: true }, required: false }]
   });
 
   const formattedSpots = spots.map(spot => ({
@@ -102,15 +108,13 @@ router.get('/current', requireAuth, async (req, res) => {
     name: spot.name,
     description: spot.description,
     price: spot.price,
-    createdAt: spot.createdAt ? spot.createdAt.toISOString() : null,
-    updatedAt: spot.updatedAt ? spot.updatedAt.toISOString() : null,
-    previewImage: spot.SpotImages?.[0]?.url || null,
+    previewImage: spot.SpotImages?.[0]?.url || null
   }));
 
   res.json({ Spots: formattedSpots });
 });
 
-// Get Spot Details by ID
+// **Get Spot Details by ID**
 router.get('/:spotId', async (req, res) => {
   const { spotId } = req.params;
 
@@ -125,15 +129,9 @@ router.get('/:spotId', async (req, res) => {
     return res.status(404).json({ message: "Spot couldn't be found" });
   }
 
-  // Calculate the number of reviews and average star rating
   const numReviews = await Review.count({ where: { spotId } });
-  const avgRatingData = await Review.findOne({
-    attributes: [[Sequelize.fn('AVG', Sequelize.col('stars')), 'avgRating']],
-    where: { spotId },
-  });
-  const avgStarRating = avgRatingData ? parseFloat(avgRatingData.dataValues.avgRating).toFixed(2) : '0.00';
+  const avgRating = await Review.aggregate('stars', 'avg', { where: { spotId } }) || 0;
 
-  // Format the response object
   const formattedSpot = {
     id: spot.id,
     ownerId: spot.ownerId,
@@ -146,10 +144,10 @@ router.get('/:spotId', async (req, res) => {
     name: spot.name,
     description: spot.description,
     price: spot.price,
-    createdAt: spot.createdAt ? spot.createdAt.toISOString() : null,
-    updatedAt: spot.updatedAt ? spot.updatedAt.toISOString() : null,
+    createdAt: spot.createdAt,
+    updatedAt: spot.updatedAt,
     numReviews,
-    avgStarRating,
+    avgStarRating: parseFloat(avgRating.toFixed(2)),
     SpotImages: spot.SpotImages,
     Owner: spot.Owner,
   };
@@ -157,7 +155,7 @@ router.get('/:spotId', async (req, res) => {
   res.json(formattedSpot);
 });
 
-// Create a Spot
+// **Create a Spot**
 router.post('/', requireAuth, validateSpot, async (req, res) => {
   const { user } = req;
   const { address, city, state, country, lat, lng, name, description, price } = req.body;
@@ -172,13 +170,13 @@ router.post('/', requireAuth, validateSpot, async (req, res) => {
     lng,
     name,
     description,
-    price,
+    price
   });
 
   res.status(201).json(spot);
 });
 
-// Edit a Spot
+// **Edit a Spot**
 router.put('/:spotId', requireAuth, validateSpot, async (req, res) => {
   const { spotId } = req.params;
   const { address, city, state, country, lat, lng, name, description, price } = req.body;
@@ -197,7 +195,7 @@ router.put('/:spotId', requireAuth, validateSpot, async (req, res) => {
   res.json(spot);
 });
 
-// Delete a Spot
+// **Delete a Spot**
 router.delete('/:spotId', requireAuth, async (req, res) => {
   const { spotId } = req.params;
 
