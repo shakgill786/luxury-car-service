@@ -1,4 +1,3 @@
-// backend/routes/api/session.js
 const express = require('express');
 const { Op } = require('sequelize');
 const bcrypt = require('bcryptjs');
@@ -9,14 +8,15 @@ const { handleValidationErrors } = require('../../utils/validation');
 
 const router = express.Router();
 
+// Validation middleware for login requests
 const validateLogin = [
   check('credential')
     .exists({ checkFalsy: true })
     .notEmpty()
-    .withMessage('Please provide a valid email or username.'),
+    .withMessage('Email or username is required'),
   check('password')
     .exists({ checkFalsy: true })
-    .withMessage('Please provide a password.'),
+    .withMessage('Password is required'),
   handleValidationErrors,
 ];
 
@@ -27,45 +27,56 @@ router.post('/', validateLogin, async (req, res, next) => {
   const user = await User.unscoped().findOne({
     where: {
       [Op.or]: [{ username: credential }, { email: credential }],
-    }
+    },
   });
 
+  // If user not found or password doesn't match
   if (!user || !bcrypt.compareSync(password, user.hashedPassword.toString())) {
-    return res.status(401).json({ message: "Invalid credentials" });
+    return res.status(401).json({
+      message: 'Invalid credentials',
+    });
   }
 
   const safeUser = {
     id: user.id,
-    email: user.email,
-    username: user.username,
     firstName: user.firstName,
     lastName: user.lastName,
-    createdAt: user.createdAt,
-    updatedAt: user.updatedAt
+    email: user.email,
+    username: user.username,
   };
 
+  // Set token cookie
   await setTokenCookie(res, user);
-  return res.json({ user: safeUser });
+
+  // Successful response
+  return res.status(200).json({ user: safeUser });
 });
 
-// Restore Session User (Get Current User)
+// Get the Current User
 router.get('/', restoreUser, (req, res) => {
   const { user } = req;
 
   if (user) {
     const safeUser = {
       id: user.id,
-      email: user.email,
-      username: user.username,
       firstName: user.firstName,
       lastName: user.lastName,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt
+      email: user.email,
+      username: user.username,
     };
+
+    // Return user data if authenticated
     return res.status(200).json({ user: safeUser });
   } else {
+    // If no user is logged in, return null
     return res.status(200).json({ user: null });
   }
+});
+
+// Logout the Current User (Optional Feature)
+router.delete('/', (req, res) => {
+  res.clearCookie('token');
+  return res.status(200).json({ message: 'Successfully logged out' });
 });
 
 module.exports = router;

@@ -5,70 +5,72 @@ const { User } = require('../db/models');
 
 const { secret, expiresIn } = jwtConfig;
 
-// Sends a JWT Cookie
+// **Set JWT Token in a Cookie**
 const setTokenCookie = (res, user) => {
   const safeUser = {
     id: user.id,
     email: user.email,
     username: user.username,
+    firstName: user.firstName,  // Added firstName
+    lastName: user.lastName,    // Added lastName
   };
-  const token = jwt.sign(
-    { data: safeUser },
-    secret,
-    { expiresIn: parseInt(expiresIn) }
-  );
 
-  const isProduction = process.env.NODE_ENV === "production";
+  // Generate a JWT token
+  const token = jwt.sign({ data: safeUser }, secret, { expiresIn: parseInt(expiresIn) });
 
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  // Set the token as an HTTP-only cookie
   res.cookie('token', token, {
-    maxAge: expiresIn * 1000, // maxAge in milliseconds
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? "Lax" : "Strict"
+    maxAge: expiresIn * 1000, // Convert expiresIn to milliseconds
+    httpOnly: true,            // Prevent client-side access to the token
+    secure: isProduction,       // Use secure cookies in production
+    sameSite: isProduction ? 'Lax' : 'Strict', // Mitigate CSRF attacks
   });
 
   return token;
 };
 
-// Middleware to restore the user session based on JWT token
+// **Middleware to Restore User Session**
 const restoreUser = async (req, res, next) => {
   const { token } = req.cookies;
-  req.user = null;
+  req.user = null; // Initialize user as null
 
-  if (!token) {
-    return next(); // If no token, move to the next middleware
-  }
+  if (!token) return next(); // If no token, skip to the next middleware
 
   try {
+    // Verify the token
     const jwtPayload = jwt.verify(token, secret);
     const { id } = jwtPayload.data;
 
+    // Fetch the user by ID with only necessary attributes
     const user = await User.findByPk(id, {
-      attributes: ['id', 'email', 'username', 'firstName', 'lastName', 'createdAt', 'updatedAt'], // Fetch only necessary fields
+      attributes: ['id', 'email', 'username', 'firstName', 'lastName', 'createdAt', 'updatedAt'],
     });
 
     if (user) {
-      req.user = user; // Attach user to request
+      req.user = user; // Attach user to request if found
     } else {
-      res.clearCookie('token'); // Clear the token if user isn't found
+      res.clearCookie('token'); // Clear token if user is not found
     }
 
     return next();
   } catch (err) {
+    // Clear token if it’s invalid or expired
     res.clearCookie('token');
-    return next(); // If token is invalid or expired, skip to the next middleware
+    return next();
   }
 };
 
-// Middleware for requiring user authentication
+// **Middleware for Requiring Authentication**
 const requireAuth = (req, _res, next) => {
-  if (req.user) return next();
+  if (req.user) return next(); // If user is authenticated, proceed
 
   const err = new Error('Authentication required');
   err.title = 'Authentication required';
   err.errors = { message: 'Authentication required' };
   err.status = 401;
-  return next(err);
+  return next(err); // Pass the error to the next middleware
 };
 
 module.exports = { setTokenCookie, restoreUser, requireAuth };

@@ -1,4 +1,3 @@
-// backend/routes/index.js
 const express = require('express');
 const router = express.Router();
 const apiRouter = require('./api');
@@ -9,8 +8,9 @@ router.use('/api', apiRouter);
 // **Development-Only Test Route**
 if (process.env.NODE_ENV !== 'production') {
   router.get('/hello/world', (req, res) => {
-    res.cookie('XSRF-TOKEN', req.csrfToken()); // Set CSRF token in cookies
-    res.status(200).json({ message: 'Hello World!' });
+    const csrfToken = req.csrfToken(); // Generate CSRF token
+    res.cookie('XSRF-TOKEN', csrfToken, { httpOnly: false }); // Set CSRF token in cookies
+    res.status(200).json({ message: 'Hello World!', csrfToken });
   });
 }
 
@@ -18,14 +18,14 @@ if (process.env.NODE_ENV !== 'production') {
 router.get('/', (req, res) => {
   res.status(200).json({
     message: 'Welcome to the Luxury Car Service API!',
-    status: 'Running'
+    status: 'Running',
   });
 });
 
 // **Route to Restore CSRF Token**
 router.get('/csrf/restore', (req, res) => {
   const csrfToken = req.csrfToken(); // Generate CSRF token
-  res.cookie('XSRF-TOKEN', csrfToken);
+  res.cookie('XSRF-TOKEN', csrfToken, { httpOnly: false }); // Set CSRF token in cookies
   res.status(200).json({ 'XSRF-Token': csrfToken });
 });
 
