@@ -18,7 +18,7 @@ const findAndDeleteImage = async (model, imageId, ownerKey, req, res) => {
       });
   
       if (!image) {
-        return res.status(404).json({ message: `${model.name} couldn't be found` });
+        return res.status(404).json({ message: `Review Image couldn't be found` });
       }
   
       const ownerId = image[ownerKey === 'ownerId' ? 'Spot' : 'Review'][ownerKey];
