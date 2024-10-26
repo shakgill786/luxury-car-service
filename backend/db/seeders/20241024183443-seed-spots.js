@@ -8,21 +8,12 @@ options.tableName = 'Spots'; // Ensure the correct table name is set in options
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    const users = await queryInterface.sequelize.query(
-      `SELECT id FROM "${options.schema ? `${options.schema}.` : ''}Users" ORDER BY id ASC;`
-    );
-
-    const userIds = users[0];
-
-    if (userIds.length < 3) {
-      throw new Error('Not enough users found to seed spots.');
-    }
 
     await queryInterface.bulkInsert(
       options,
       [
         {
-          ownerId: userIds[0].id,
+          ownerId: 1,
           address: '123 Ocean Drive',
           city: 'Los Angeles',
           state: 'California',
@@ -36,7 +27,7 @@ module.exports = {
           updatedAt: new Date(),
         },
         {
-          ownerId: userIds[1].id,
+          ownerId: 2,
           address: '456 Manhattan Ave',
           city: 'New York',
           state: 'New York',
@@ -50,7 +41,7 @@ module.exports = {
           updatedAt: new Date(),
         },
         {
-          ownerId: userIds[2].id,
+          ownerId: 3,
           address: '789 Mountain Road',
           city: 'Denver',
           state: 'Colorado',
