@@ -115,6 +115,41 @@ router.delete('/:reviewId', requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/reviews/current
+router.get('/current', requireAuth, async (req, res) => {
+  try {
+    const currentUserId = req.user.id; // Get the current user's ID from the authentication middleware
+
+    // Fetch all reviews by the current user, including associated data
+    const reviews = await Review.findAll({
+      where: { userId: currentUserId },
+      include: [
+        {
+          model: User,
+          attributes: ['id', 'firstName', 'lastName'], // Include limited user info
+        },
+        {
+          model: Spot,
+          attributes: [
+            'id', 'ownerId', 'address', 'city', 'state', 'country', 'lat',
+            'lng', 'name', 'price', 'previewImage'
+          ], // Include spot details
+        },
+        {
+          model: ReviewImage,
+          attributes: ['id', 'url'], // Include review images
+        },
+      ],
+    });
+
+    // Send response with the reviews in JSON format
+    res.status(200).json({ Reviews: reviews });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Something went wrong.' });
+  }
+});
+
 /**
  * Helper Function to Find and Delete Images
  * Handles deletion for both SpotImage and ReviewImage models.
