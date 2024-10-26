@@ -1,12 +1,12 @@
-// backend/utils/auth.js
-const jwt = require('jsonwebtoken');
-const { jwtConfig } = require('../config');
-const { User } = require('../db/models');
+const jwt = require("jsonwebtoken");
+const { jwtConfig } = require("../config");
+const { User } = require("../db/models");
 
 const { secret, expiresIn } = jwtConfig;
 
 // Sends a JWT Cookie
 const setTokenCookie = (res, user) => {
+  // Create the token.
   const safeUser = {
     id: user.id,
     email: user.email,
@@ -15,57 +15,52 @@ const setTokenCookie = (res, user) => {
   const token = jwt.sign(
     { data: safeUser },
     secret,
-    { expiresIn: parseInt(expiresIn) }
+    { expiresIn: parseInt(expiresIn) } // 604,800 seconds = 1 week
   );
 
   const isProduction = process.env.NODE_ENV === "production";
 
-  res.cookie('token', token, {
+  // Set the token cookie
+  res.cookie("token", token, {
     maxAge: expiresIn * 1000, // maxAge in milliseconds
     httpOnly: true,
     secure: isProduction,
-    sameSite: isProduction ? "Lax" : "Strict"
+    sameSite: isProduction && "Lax"
   });
 
   return token;
 };
 
-// Middleware to restore the user session based on JWT token
 const restoreUser = (req, res, next) => {
+  // token parsed from cookies
   const { token } = req.cookies;
   req.user = null;
 
-  if (!token) {
-    return next(); // If no token, move to the next middleware
-  }
-
   return jwt.verify(token, secret, null, async (err, jwtPayload) => {
     if (err) {
-      console.error('JWT verification failed:', err);
-      return next(); // If token is invalid or expired, skip to the next middleware
+      return next();
     }
 
     try {
       const { id } = jwtPayload.data;
       req.user = await User.findByPk(id, {
-        attributes: ['id', 'email', 'username', 'createdAt', 'updatedAt'], // Fetch only necessary fields
+        attributes: {
+          include: ['email', 'createdAt', 'updatedAt']
+        }
       });
-
-      if (!req.user) {
-        res.clearCookie('token'); // Clear the token if user isn't found
-      }
     } catch (e) {
-      console.error('Error while fetching user:', e);
-      res.clearCookie('token');
-      return next(); // Clear the token and move on in case of error
+      res.clearCookie("token");
+      return next();
     }
 
-    return next(); // Proceed to the next middleware if everything is OK
+    if (!req.user) res.clearCookie("token");
+
+    return next();
   });
 };
 
-// Middleware for requiring user authentication
-const requireAuth = (req, _res, next) => {
+// If there is no current user, return an error
+const requireAuth = function (req, _res, next) {
   if (req.user) return next();
 
   const err = new Error('Authentication required');
