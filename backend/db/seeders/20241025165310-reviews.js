@@ -11,41 +11,27 @@ options.tableName = 'Reviews'; // Ensure correct table name in options
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    const users = await queryInterface.sequelize.query(
-      `SELECT id FROM "${options.schema ? `${options.schema}.` : ''}Users" ORDER BY id ASC;`
-    );
-
-    const spots = await queryInterface.sequelize.query(
-      `SELECT id FROM "${options.schema ? `${options.schema}.` : ''}Spots" ORDER BY id ASC;`
-    );
-
-    const userIds = users[0];
-    const spotIds = spots[0];
-
-    if (userIds.length < 3 || spotIds.length < 3) {
-      throw new Error('Not enough users or spots found to seed Reviews data.');
-    }
-
+ 
     await queryInterface.bulkInsert(options, [
       {
-        userId: userIds[0].id,
-        spotId: spotIds[0].id,
+        userId: 1,
+        spotId: 1,
         review: 'Amazing villa with breathtaking ocean views!',
         stars: 5,
         createdAt: new Date(),
         updatedAt: new Date(),
       },
       {
-        userId: userIds[1].id,
-        spotId: spotIds[1].id,
+        userId: 2,
+        spotId: 2,
         review: 'A cozy apartment, perfect location but slightly noisy.',
         stars: 4,
         createdAt: new Date(),
         updatedAt: new Date(),
       },
       {
-        userId: userIds[2].id,
-        spotId: spotIds[2].id,
+        userId: 3,
+        spotId: 3,
         review: 'Great experience, but the cabin could use some upgrades.',
         stars: 3,
         createdAt: new Date(),
