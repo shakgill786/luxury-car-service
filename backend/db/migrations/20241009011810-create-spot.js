@@ -2,77 +2,76 @@
 
 let options = {};
 if (process.env.NODE_ENV === 'production') {
-  options.schema = process.env.SCHEMA;  // Add schema only for production
+  options.schema = process.env.SCHEMA; // Add schema only for production
 }
-options.tableName = 'Spots'
+options.tableName = 'Spots';
 
 module.exports = {
-  up: async (queryInterface, Sequelize) => {
-    await queryInterface.createTable(options, {
+  async up(queryInterface, Sequelize) {
+    await queryInterface.createTable('Spots', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
-        type: Sequelize.INTEGER
+        type: Sequelize.INTEGER,
       },
       ownerId: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: { model: 'Users', key: 'id' }, // Foreign key
-        onDelete: 'CASCADE'
+        onDelete: 'CASCADE',
       },
       address: {
         type: Sequelize.STRING,
-        allowNull: false
+        allowNull: false,
       },
       city: {
         type: Sequelize.STRING,
-        allowNull: false
+        allowNull: false,
       },
       state: {
         type: Sequelize.STRING,
-        allowNull: false
+        allowNull: false,
       },
       country: {
         type: Sequelize.STRING,
-        allowNull: false
+        allowNull: false,
       },
       lat: {
         type: Sequelize.FLOAT,
-        allowNull: false
+        allowNull: false,
       },
       lng: {
         type: Sequelize.FLOAT,
-        allowNull: false
+        allowNull: false,
       },
       name: {
         type: Sequelize.STRING,
-        allowNull: false
+        allowNull: false,
       },
       description: {
         type: Sequelize.TEXT,
-        allowNull: false
+        allowNull: false,
       },
       price: {
         type: Sequelize.FLOAT,
-        allowNull: false
+        allowNull: false,
       },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,
-        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'), // SQLite-compatible default
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
       },
       updatedAt: {
         allowNull: false,
         type: Sequelize.DATE,
-        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'), // SQLite-compatible default
-      }
-    });
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
+      },
+    }, options); // Pass options here
   },
 
   async down(queryInterface, Sequelize) {
-    let options = {};
-    options.tableName = 'Spots';
+    options.tableName = 'Spots'; // Set tableName in down method
     await queryInterface.dropTable(options);
-  }
+  },
 };

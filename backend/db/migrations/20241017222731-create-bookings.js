@@ -1,13 +1,14 @@
 'use strict';
+
 let options = {};
 if (process.env.NODE_ENV === 'production') {
-  options.schema = process.env.SCHEMA;  // Add schema only for production
+  options.schema = process.env.SCHEMA; // Add schema only for production
 }
-  options.tableName = 'Bookings'
+options.tableName = 'Bookings';
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable(options, {
+    await queryInterface.createTable('Bookings', {
       id: {
         allowNull: false,
         autoIncrement: true,
@@ -44,12 +45,11 @@ module.exports = {
         type: Sequelize.DATE,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
       },
-    });
+    }, options); // Pass options here
   },
 
   async down(queryInterface, Sequelize) {
-    let options = {};
-    options.tableName = 'Bookings';
+    options.tableName = 'Bookings'; // Set tableName for down method
     await queryInterface.dropTable(options);
   },
 };

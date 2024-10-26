@@ -4,11 +4,11 @@ let options = {};
 if (process.env.NODE_ENV === 'production') {
   options.schema = process.env.SCHEMA; // Add schema only for production
 }
-options.tableName = 'SpotImage';
+options.tableName = 'SpotImages';
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable(options, {
+    await queryInterface.createTable('SpotImages', {
       id: {
         allowNull: false,
         autoIncrement: true,
@@ -39,12 +39,11 @@ module.exports = {
         type: Sequelize.DATE,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
       },
-    });
+    }, options); // Pass options here
   },
 
   async down(queryInterface, Sequelize) {
-    let options = {};
-    options.tableName = 'SpotImage';
+    options.tableName = 'SpotImages'; // Set tableName for down method
     await queryInterface.dropTable(options);
-  }
+  },
 };

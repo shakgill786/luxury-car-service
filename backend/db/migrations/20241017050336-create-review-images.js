@@ -1,13 +1,14 @@
 'use strict';
+
 let options = {};
 if (process.env.NODE_ENV === 'production') {
-  options.schema = process.env.SCHEMA;  // Add schema only for production
+  options.schema = process.env.SCHEMA; // Add schema only for production
 }
-  options.tableName = 'ReviewImages'
+options.tableName = 'ReviewImages';
 
 module.exports = {
-  up: async (queryInterface, Sequelize) => {
-    await queryInterface.createTable(options, {
+  async up(queryInterface, Sequelize) {
+    await queryInterface.createTable('ReviewImages', {
       id: {
         allowNull: false,
         autoIncrement: true,
@@ -21,10 +22,7 @@ module.exports = {
       reviewId: {
         type: Sequelize.INTEGER,
         allowNull: false,
-        references: {
-          model: 'Reviews',
-          key: 'id',
-        },
+        references: { model: 'Reviews', key: 'id' },
         onDelete: 'CASCADE',
       },
       createdAt: {
@@ -37,12 +35,11 @@ module.exports = {
         type: Sequelize.DATE,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
       },
-    });
+    }, options); // Pass options here
   },
 
   async down(queryInterface, Sequelize) {
-    let options = {};
-    options.tableName = 'ReviewImages';
+    options.tableName = 'ReviewImages'; // Set tableName for down method
     await queryInterface.dropTable(options);
   },
 };
