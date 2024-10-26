@@ -6,7 +6,7 @@ let options = {};
 if (process.env.NODE_ENV === 'production') {
   options.schema = process.env.SCHEMA; // Define schema for production
 }
-options.tableName = 'SpotImages';
+options.tableName = 'SpotImage';
 
 
 /** @type {import('sequelize-cli').Migration} */
@@ -45,6 +45,6 @@ module.exports = {
   },
 
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.bulkDelete(options,'SpotImages', null, {});
+    await queryInterface.bulkDelete(options,'SpotImage', null, {});
   },
 };
