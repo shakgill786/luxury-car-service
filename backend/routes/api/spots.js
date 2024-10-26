@@ -242,6 +242,96 @@ router.post('/:spotId/images', requireAuth, async (req, res) => {
   }
 });
 
+
+router.post('/:spotId/reviews', requireAuth, async (req, res) => {
+  try {
+    const { spotId } = req.params;
+    const { review, stars } = req.body;
+    const userId = req.user.id;
+
+    // Check if the spot exists
+    const spot = await Spot.findByPk(spotId);
+    if (!spot) {
+      return res.status(404).json({ message: "Spot couldn't be found" });
+    }
+
+    // Check if the user already has a review for the spot
+    const existingReview = await Review.findOne({
+      where: { spotId, userId },
+    });
+    if (existingReview) {
+      return res.status(500).json({ message: 'User already has a review for this spot' });
+    }
+
+    // Validate request body
+    if (!review) {
+      return res.status(400).json({
+        message: 'Bad Request',
+        errors: { review: 'Review text is required' },
+      });
+    }
+    if (typeof stars !== 'number' || stars < 1 || stars > 5) {
+      return res.status(400).json({
+        message: 'Bad Request',
+        errors: { stars: 'Stars must be an integer from 1 to 5' },
+      });
+    }
+
+    // Create the new review
+    const newReview = await Review.create({
+      userId,
+      spotId,
+      review,
+      stars,
+    });
+
+    // Send success response
+    res.status(201).json(newReview);
+  } catch (error) {
+    console.error('Error creating review:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+/**
+ * GET /api/spots/:spotId/reviews
+ * Fetch all reviews for a specific spot by its ID
+ */
+router.get('/:spotId/reviews', async (req, res) => {
+  try {
+    const { spotId } = req.params;
+
+    // Check if the spot with the given ID exists
+    const spot = await Spot.findByPk(spotId);
+    if (!spot) {
+      return res.status(404).json({ message: "Spot couldn't be found" });
+    }
+
+    // Fetch all reviews for the given spot ID
+    const reviews = await Review.findAll({
+      where: { spotId },
+      include: [
+        {
+          model: User,
+          attributes: ['id', 'firstName', 'lastName'],
+        },
+        {
+          model: ReviewImage,
+          attributes: ['id', 'url'],
+        },
+      ],
+    });
+
+    // Send the response with the reviews
+    res.status(200).json({ Reviews: reviews });
+  } catch (error) {
+    console.error('Error fetching spot reviews:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+
+
 /**
  * Helper Function to Find and Delete Images
  * Handles deletion for both SpotImage and ReviewImage models.

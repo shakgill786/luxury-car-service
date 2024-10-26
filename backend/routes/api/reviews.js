@@ -115,38 +115,71 @@ router.delete('/:reviewId', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/reviews/current
+/**
+ * GET /api/reviews/current
+ * Fetch all reviews of the current authenticated user
+ */
 router.get('/current', requireAuth, async (req, res) => {
   try {
-    const currentUserId = req.user.id; // Get the current user's ID from the authentication middleware
+    const currentUserId = req.user.id;
 
-    // Fetch all reviews by the current user, including associated data
+    // Fetch all reviews by the current user, including associated User, Spot, and ReviewImage data
     const reviews = await Review.findAll({
       where: { userId: currentUserId },
       include: [
         {
           model: User,
-          attributes: ['id', 'firstName', 'lastName'], // Include limited user info
+          attributes: ['id', 'firstName', 'lastName'],
         },
         {
           model: Spot,
           attributes: [
-            'id', 'ownerId', 'address', 'city', 'state', 'country', 'lat',
-            'lng', 'name', 'price', 'previewImage'
-          ], // Include spot details
+            'id', 'ownerId', 'address', 'city', 'state', 'country', 
+            'lat', 'lng', 'name', 'price',
+          ],
+          include: [
+            {
+              model: SpotImage,
+              where: { preview: true },
+              required: false,
+              attributes: ['url'],
+            },
+          ],
         },
         {
           model: ReviewImage,
-          attributes: ['id', 'url'], // Include review images
+          attributes: ['id', 'url'],
         },
       ],
     });
 
-    // Send response with the reviews in JSON format
-    res.status(200).json({ Reviews: reviews });
+    // Format reviews to include `previewImage` inside the Spot object
+    const formattedReviews = reviews.map(review => {
+      const spot = review.Spot;
+      const previewImage = spot.SpotImages?.[0]?.url || null;
+
+      return {
+        id: review.id,
+        userId: review.userId,
+        spotId: review.spotId,
+        review: review.review,
+        stars: review.stars,
+        createdAt: review.createdAt,
+        updatedAt: review.updatedAt,
+        User: review.User,
+        Spot: {
+          ...spot.toJSON(),
+          previewImage,
+        },
+        ReviewImages: review.ReviewImages,
+      };
+    });
+
+    // Send the response with formatted reviews
+    res.status(200).json({ Reviews: formattedReviews });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Something went wrong.' });
+    console.error('Error fetching user reviews:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 
