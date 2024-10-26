@@ -1,5 +1,14 @@
 'use strict';
 
+const bcrypt = require('bcryptjs');
+
+let options = {};
+if (process.env.NODE_ENV === 'production') {
+  options.schema = process.env.SCHEMA; // Define schema for production
+}
+options.tableName = 'SpotImages';
+
+
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   up: async (queryInterface, Sequelize) => {
@@ -36,6 +45,6 @@ module.exports = {
   },
 
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.bulkDelete('SpotImages', null, {});
+    await queryInterface.bulkDelete(options,'SpotImages', null, {});
   },
 };
