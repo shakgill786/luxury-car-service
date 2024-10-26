@@ -4,26 +4,10 @@ const { Model } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
   class Spot extends Model {
     static associate(models) {
-      Spot.hasMany(models.SpotImage, {
-        foreignKey: 'spotId',
-        onDelete: 'CASCADE',
-      });
-
-      Spot.hasMany(models.Review, {
-        foreignKey: 'spotId',
-        onDelete: 'CASCADE',
-      });
-
-      Spot.belongsTo(models.User, {
-        foreignKey: 'ownerId',
-        as: 'Owner'
-      });
-
-      Spot.hasMany(models.Booking, {
-        foreignKey: 'spotId',
-        onDelete: 'CASCADE',
-        hooks: true
-      });
+      Spot.hasMany(models.SpotImage, { foreignKey: 'spotId', onDelete: 'CASCADE' });
+      Spot.hasMany(models.Review, { foreignKey: 'spotId', onDelete: 'CASCADE' });
+      Spot.belongsTo(models.User, { foreignKey: 'ownerId', as: 'Owner' });
+      Spot.hasMany(models.Booking, { foreignKey: 'spotId', onDelete: 'CASCADE', hooks: true });
     }
   }
 
@@ -36,76 +20,47 @@ module.exports = (sequelize, DataTypes) => {
       address: {
         type: DataTypes.STRING,
         allowNull: false,
-        validate: {
-          notEmpty: true,
-        },
+        validate: { notEmpty: true },
       },
       city: {
         type: DataTypes.STRING,
         allowNull: false,
-        validate: {
-          notEmpty: true,
-        },
+        validate: { notEmpty: true },
       },
       state: {
         type: DataTypes.STRING,
         allowNull: false,
-        validate: {
-          notEmpty: true,
-        },
+        validate: { notEmpty: true },
       },
       country: {
         type: DataTypes.STRING,
         allowNull: false,
-        validate: {
-          notEmpty: true,
-        },
+        validate: { notEmpty: true },
       },
       lat: {
-        type: DataTypes.FLOAT,
+        type: DataTypes.DECIMAL(10, 8), // Adjusted for higher precision
         allowNull: false,
-        validate: {
-          isFloat: true,
-        },
+        validate: { isFloat: true },
       },
       lng: {
-        type: DataTypes.FLOAT,
+        type: DataTypes.DECIMAL(11, 8), // Adjusted for higher precision
         allowNull: false,
-        validate: {
-          isFloat: true,
-        },
+        validate: { isFloat: true },
       },
       name: {
         type: DataTypes.STRING,
         allowNull: false,
-        validate: {
-          len: [1, 255],
-        },
+        validate: { len: [1, 255] },
       },
       description: {
         type: DataTypes.TEXT,
         allowNull: false,
-        validate: {
-          notEmpty: true,
-        },
+        validate: { notEmpty: true },
       },
       price: {
         type: DataTypes.FLOAT,
         allowNull: false,
-        validate: {
-          isFloat: true,
-          min: 0,
-        },
-      },
-      createdAt: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: sequelize.literal('CURRENT_TIMESTAMP'),
-      },
-      updatedAt: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: sequelize.literal('CURRENT_TIMESTAMP'),
+        validate: { isFloat: true, min: 0 },
       },
     },
     {
