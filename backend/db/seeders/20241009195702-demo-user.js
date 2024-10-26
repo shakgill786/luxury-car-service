@@ -47,6 +47,11 @@ module.exports = {
 
   async down(queryInterface, Sequelize) {
     const Op = Sequelize.Op;
+    let options = {};
+    if (process.env.NODE_ENV === 'production') {
+      options.schema = process.env.SCHEMA; // Add schema for production
+    }
+    options.tableName = 'Users';
     return queryInterface.bulkDelete(
       options,
       {
