@@ -24,7 +24,7 @@ const validateLogin = [
 router.post('/', validateLogin, async (req, res, next) => {
   const { credential, password } = req.body;
 
-  // **Check if credential and password are provided**
+  // Check if credential and password are provided
   if (!credential || !password) {
     return res.status(400).json({
       message: "Bad Request",
@@ -42,7 +42,7 @@ router.post('/', validateLogin, async (req, res, next) => {
       }
     });
 
-    // **Invalid Credentials Handling**
+    // Invalid Credentials Handling
     if (!user || !bcrypt.compareSync(password, user.hashedPassword.toString())) {
       return res.status(401).json({
         message: "Invalid credentials"
@@ -57,14 +57,19 @@ router.post('/', validateLogin, async (req, res, next) => {
       lastName: user.lastName
     };
 
-    // **Set Token Cookie**
+    // Set Token Cookie
     await setTokenCookie(res, safeUser);
 
     return res.json({ user: safeUser });
   } catch (err) {
-    next(err);
+    // Catch any other errors and ensure a message is returned
+    return res.status(500).json({
+      message: "Internal Server Error",
+      error: err.message
+    });
   }
 });
+
 
 // **Log Out a User**
 router.delete('/', (_req, res) => {
