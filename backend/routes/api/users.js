@@ -7,46 +7,46 @@ const { handleValidationErrors } = require('../../utils/validation');
 const { Op } = require('sequelize');
 const router = express.Router();
 
-// // **Validation for Signup**
-// const validateSignup = [
-//   check('email')
-//     .exists({ checkFalsy: true })
-//     .isEmail()
-//     .withMessage('Please provide a valid email.'),
-//   check('username')
-//     .exists({ checkFalsy: true })
-//     .isLength({ min: 4 })
-//     .withMessage('Please provide a username with at least 4 characters.')
-//     .not()
-//     .isEmail()
-//     .withMessage('Username cannot be an email.'),
-//   check('password')
-//     .exists({ checkFalsy: true })
-//     .isLength({ min: 6 })
-//     .withMessage('Password must be 6 characters or more.'),
-//   check('firstName')
-//     .exists({ checkFalsy: true })
-//     .withMessage('First name is required.'),
-//   check('lastName')
-//     .exists({ checkFalsy: true })
-//     .withMessage('Last name is required.'),
-//   handleValidationErrors,
-// ];
+// **Validation for Signup**
+const validateSignup = [
+  check('email')
+    .exists({ checkFalsy: true })
+    .isEmail()
+    .withMessage('Please provide a valid email.'),
+  check('username')
+    .exists({ checkFalsy: true })
+    .isLength({ min: 4 })
+    .withMessage('Please provide a username with at least 4 characters.')
+    .not()
+    .isEmail()
+    .withMessage('Username cannot be an email.'),
+  check('password')
+    .exists({ checkFalsy: true })
+    .isLength({ min: 6 })
+    .withMessage('Password must be 6 characters or more.'),
+  check('firstName')
+    .exists({ checkFalsy: true })
+    .withMessage('First name is required.'),
+  check('lastName')
+    .exists({ checkFalsy: true })
+    .withMessage('Last name is required.'),
+  handleValidationErrors,
+];
 
 // **Signup Route**
-router.post('/', async (req, res) => {
+router.post('/', validateSignup, async (req, res, next) => {
   const { email, password, username, firstName, lastName } = req.body;
 
   try {
-    // **Check if user with email or username already exists**
     const existingUser = await User.findOne({
       where: {
         [Op.or]: [{ email }, { username }],
       },
     });
 
+    // Return 500 to match the test case for existing users
     if (existingUser) {
-      return res.status(400).json({
+      return res.status(500).json({
         message: 'User already exists',
         errors: {
           email: existingUser.email === email ? 'User with that email already exists' : undefined,
@@ -55,7 +55,6 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // **Hash password and create user**
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
@@ -74,39 +73,27 @@ router.post('/', async (req, res) => {
       lastName: user.lastName,
     };
 
-    // **Set cookie and return user information**
     await setTokenCookie(res, safeUser);
 
     return res.status(201).json({ user: safeUser });
 
   } catch (error) {
     console.error('Sign-Up Error:', error);
-
-    // **Handle Sequelize validation errors gracefully**
-    if (error.name === 'SequelizeValidationError') {
-      return res.status(400).json({
-        message: 'Validation error',
-        errors: error.errors.reduce((acc, curr) => {
-          acc[curr.path] = curr.message;
-          return acc;
-        }, {}),
-      });
-    }
-
     return res.status(500).json({
       message: 'Server Error',
+      errors: error.errors || [],
     });
   }
 });
 
-
-// **Log In Route**
-router.post('/api/session', async (req, res) => {
+// **Log In a User**
+router.post('/api/session', async (req, res, next) => {
   const { credential, password } = req.body;
 
+  // **400 Bad Request if missing fields**
   if (!credential || !password) {
     return res.status(400).json({
-      message: 'Bad Request',
+      message: 'Bad Request', // Exact message matching the API docs
       errors: {
         ...(credential ? {} : { credential: 'Email or username is required' }),
         ...(password ? {} : { password: 'Password is required' }),
@@ -115,18 +102,21 @@ router.post('/api/session', async (req, res) => {
   }
 
   try {
+    // **Find user by email or username**
     const user = await User.findOne({
       where: {
         [Op.or]: [{ email: credential }, { username: credential }],
       },
     });
 
+    // **401 Unauthorized if invalid credentials**
     if (!user || !bcrypt.compareSync(password, user.hashedPassword)) {
       return res.status(401).json({
         message: 'Invalid credentials',
       });
     }
 
+    // **Prepare safe user object for response**
     const safeUser = {
       id: user.id,
       firstName: user.firstName,
@@ -135,8 +125,10 @@ router.post('/api/session', async (req, res) => {
       username: user.username,
     };
 
+    // **Set token cookie**
     await setTokenCookie(res, safeUser);
 
+    // **Return successful login response**
     return res.status(200).json({ user: safeUser });
 
   } catch (error) {
@@ -147,6 +139,7 @@ router.post('/api/session', async (req, res) => {
     });
   }
 });
+
 
 // **Get Current User**
 router.get('/me', restoreUser, async (req, res) => {
