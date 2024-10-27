@@ -8,55 +8,63 @@ const { handleValidationErrors } = require('../../utils/validation');
 
 const router = express.Router();
 
-// POST /api/session - Log in a user
-router.post('/api/session', async (req, res) => {
+// **Login Validation Middleware**
+const validateLogin = [
+  check('credential')
+    .exists({ checkFalsy: true })
+    .notEmpty()
+    .withMessage('Please provide a valid email or username.'),
+  check('password')
+    .exists({ checkFalsy: true })
+    .withMessage('Please provide a password.'),
+  handleValidationErrors
+];
+
+// **Log In a User**
+router.post('/', validateLogin, async (req, res, next) => {
   const { credential, password } = req.body;
 
-  // Validate request body
+  // **Check if credential and password are provided**
   if (!credential || !password) {
     return res.status(400).json({
-      message: 'Bad Request',
+      message: "Bad Request",
       errors: {
-        credential: 'Email or username is required',
-        password: 'Password is required',
-      },
+        credential: !credential ? "Email or username is required" : undefined,
+        password: !password ? "Password is required" : undefined,
+      }
     });
   }
 
   try {
-    // Find user by email or username
-    const user = await User.findOne({
+    const user = await User.unscoped().findOne({
       where: {
-        [Op.or]: [{ email: credential }, { username: credential }],
-      },
+        [Op.or]: [{ username: credential }, { email: credential }]
+      }
     });
 
-    // If user not found or password invalid, return 401 error
-    if (!user || !bcrypt.compareSync(password, user.passwordHash)) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+    // **Invalid Credentials Handling**
+    if (!user || !bcrypt.compareSync(password, user.hashedPassword.toString())) {
+      return res.status(401).json({
+        message: "Invalid credentials"
+      });
     }
 
-    // Create a JWT token for session management
-    const token = jwt.sign({ id: user.id }, SECRET, { expiresIn: '1h' });
+    const safeUser = {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      firstName: user.firstName,
+      lastName: user.lastName
+    };
 
-    // Send the token as a cookie and return user info
-    res.cookie('token', token, { httpOnly: true, maxAge: 3600000 }); // 1 hour
+    // **Set Token Cookie**
+    await setTokenCookie(res, safeUser);
 
-    return res.status(200).json({
-      user: {
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        username: user.username,
-      },
-    });
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    return res.json({ user: safeUser });
+  } catch (err) {
+    next(err);
   }
 });
-
 
 // **Log Out a User**
 router.delete('/', (_req, res) => {
