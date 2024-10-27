@@ -71,6 +71,7 @@ router.get('/', async (req, res) => {
     price: spot.price,
     createdAt: spot.createdAt,
     updatedAt: spot.updatedAt,
+    avgRating: spot.avgRating,
     previewImage: spot.SpotImages?.[0]?.url || null,
   }));
 
@@ -90,14 +91,17 @@ router.get('/current', requireAuth, async (req, res) => {
     id: spot.id,
     ownerId: spot.ownerId,
     address: spot.address,
+    avgRating: spot.avgRating,
     city: spot.city,
     state: spot.state,
     country: spot.country,
+    createdAt: spot.createdAt,
     lat: spot.lat,
     lng: spot.lng,
     name: spot.name,
     description: spot.description,
     price: spot.price,
+    updatedAt: spot.updatedAt,
     previewImage: spot.SpotImages?.[0]?.url || null
   }));
 
@@ -153,6 +157,7 @@ router.post('/', requireAuth, validateSpot, async (req, res) => {
   const spot = await Spot.create({
     ownerId: user.id,
     address,
+    description,
     city,
     state,
     country,
@@ -269,7 +274,10 @@ router.post('/:spotId/reviews', requireAuth, async (req, res) => {
     if (!review) {
       return res.status(400).json({
         message: 'Bad Request',
-        errors: { review: 'Review text is required' },
+        errors: {
+        "review": "Review text is required",
+        "stars": "Stars must be an integer from 1 to 5",
+      },
       });
     }
     if (typeof stars !== 'number' || stars < 1 || stars > 5) {
