@@ -21,105 +21,121 @@ const validateSpot = [
 ];
 
 // **Get All Spots with Query Parameters**
-router.get('/', async (req, res) => {
-  let { page, avgRating, size, minLat, maxLat, minLng, maxLng, minPrice, maxPrice } = req.query;
+router.get("/", async (req, res, next) => {
+  try {
+      const {
+          page = 1,
+          size = 20,
+          minLat,
+          maxLat,
+          minLng,
+          maxLng,
+          minPrice,
+          maxPrice
+      } = req.query; // extract query parameters from req.query
 
-  // Query parameter validation
-  const errors = {};
-  if (page && (isNaN(page) || page < 1)) errors.page = 'Page must be greater than or equal to 1';
-  if (size && (isNaN(size) || size < 1 || size > 20)) errors.size = 'Size must be between 1 and 20';
-  if (minLat && isNaN(minLat)) errors.minLat = 'Minimum latitude is invalid';
-  if (maxLat && isNaN(maxLat)) errors.maxLat = 'Maximum latitude is invalid';
-  if (minLng && isNaN(minLng)) errors.minLng = 'Minimum longitude is invalid';
-  if (maxLng && isNaN(maxLng)) errors.maxLng = 'Maximum longitude is invalid';
-  if (minPrice && (isNaN(minPrice) || minPrice < 0)) errors.minPrice = 'Minimum price must be greater than or equal to 0';
-  if (maxPrice && (isNaN(maxPrice) || maxPrice < 0)) errors.maxPrice = 'Maximum price must be greater than or equal to 0';
-  if (Object.keys(errors).length > 0) {
-    return res.status(400).json({ message: 'Bad Request', errors });
+      // apply pagination with default values and validate them
+      const pagination = {};
+
+      //! test
+
+      const errors = {};
+
+      if (parseInt(page, 10) >= 1 && parseInt(size, 10) >= 1 && parseInt(size, 10) <= 20) {
+          pagination.limit = parseInt(size, 10);
+          pagination.offset = (parseInt(page, 10) - 1) * parseInt(size, 10);
+      } else {
+          errors.page = "Page must be greater than or equal to 1";
+          errors.size = "Size must be between 1 and 20";
+      }
+
+      // Apply filters (lat, long, price) if provided and valid
+      const where = {};
+
+      if (minLat && (isNaN(minLat) || minLat < -90 || minLat > 90)) {
+          errors.minLat = "minLat must be a number between -90 and 90";
+      } else if (minLat) {
+          where.lat = { [Op.gte]: parseFloat(minLat) };
+      }
+
+      if (maxLat && (isNaN(maxLat) || maxLat < -90 || maxLat > 90)) {
+          errors.maxLat = "maxLat must be a number between -90 and 90";
+      } else if (maxLat) {
+          where.lat = { ...where.lat, [Op.lte]: parseFloat(maxLat) };
+      }
+
+      if (minLng && (isNaN(minLng) || minLng < -180 || minLng > 180)) {
+          errors.minLng = "minLng must be a number between -180 and 180";
+      } else if (minLng) {
+          where.lng = { [Op.gte]: parseFloat(minLng) };
+      }
+
+      if (maxLng && (isNaN(maxLng) || maxLng < -180 || maxLng > 180)) {
+          errors.maxLng = "maxLng must be a number between -180 and 180";
+      } else if (maxLng) {
+          where.lng = { ...where.lng, [Op.lte]: parseFloat(maxLng) };
+      }
+
+      if (minPrice && (isNaN(minPrice) || minPrice < 0)) {
+          errors.minPrice = "minPrice must be a number greater than or equal to 0";
+      } else if (minPrice) {
+          where.price = { [Op.gte]: parseFloat(minPrice) };
+      }
+
+      if (maxPrice && (isNaN(maxPrice) || maxPrice < 0)) {
+          errors.maxPrice = "maxPrice must be a number greater than or equal to 0";
+      } else if (maxPrice) {
+          where.price = { ...where.price, [Op.lte]: parseFloat(maxPrice) };
+      }
+
+      // If there are validation errors, return them
+      if (Object.keys(errors).length > 0) {
+          return res.status(400).json({
+              message: "Bad Request",
+              errors
+          });
+      }
+
+      // use spot.findAll() with the 'where' clause and 'pagination' applied.
+      const spots = await Spot.findAll({
+          include: [
+              { model: Review, attributes: ['stars'] },
+              { model: SpotImage, attributes: ['url'] }
+          ],
+          where,
+          ...pagination
+      });
+
+      const spotList = spots.map(spot => {
+
+          const spotData = spot.toJSON();
+
+          const avgRating = spotData.Reviews && spotData.Reviews.length > 0
+          ? spotData.Reviews.reduce((acc, review) => acc + review.stars, 0) / spotData.Reviews.length
+          : 0;
+
+          const previewImage = spot.SpotImages[0] ? spot.SpotImages[0].url : null;
+
+          delete spotData.SpotImages;
+
+          delete spotData.Reviews;
+
+          return {
+              ...spotData,
+              lat: parseFloat(spotData.lat), // cast to number
+              lng: parseFloat(spotData.lng), // cast to number
+              price: parseFloat(spotData.price), // cast to number
+              avgRating,
+              previewImage
+          };
+      });
+
+      // also, include pagination data in the response
+      res.status(200).json({ Spots: spotList, page: parseInt(page, 10), size: parseInt(size, 10) });
+
+  } catch (err) {
+      next(err);
   }
-
-  page = parseInt(page) || 1;
-  size = Math.min(parseInt(size) || 20, 20);
-
-  const where = {};
-  if (minLat) where.lat = { [Op.gte]: minLat };
-  if (maxLat) where.lat = { [Op.lte]: maxLat };
-  if (minLng) where.lng = { [Op.gte]: minLng };
-  if (maxLng) where.lng = { [Op.lte]: maxLng };
-  if (minPrice) where.price = { [Op.gte]: minPrice };
-  if (maxPrice) where.price = { [Op.lte]: maxPrice };
-
-  // If there are validation errors, return them
-  if (Object.keys(errors).length > 0) {
-    return res.status(400).json({
-        message: "Bad Request",
-        errors
-    });
-}
-
-// use spot.findAll() with the 'where' clause and 'pagination' applied.
-const spots = await Spot.findAll({
-    include: [
-        { model: Review, attributes: ['stars'] },
-        { model: SpotImage, attributes: ['url'] }
-    ],
-    where,
-    ...pagination
-});
-
-const spotList = spots.map(spot => {
-
-    const spotData = spot.toJSON();
-
-    const avgRating = spotData.Reviews && spotData.Reviews.length > 0
-    ? spotData.Reviews.reduce((acc, review) => acc + review.stars, 0) / spotData.Reviews.length
-    : 0;
-
-    const previewImage = spot.SpotImages[0] ? spot.SpotImages[0].url : null;
-
-    delete spotData.SpotImages;
-
-    delete spotData.Reviews;
-
-    return {
-        ...spotData,
-        lat: parseFloat(spotData.lat), // cast to number
-        lng: parseFloat(spotData.lng), // cast to number
-        price: parseFloat(spotData.price), // cast to number
-        avgRating,
-        previewImage
-    };
-});
-
-// also, include pagination data in the response
-res.status(200).json({ Spots: spotList, page: parseInt(page, 10), size: parseInt(size, 10) });
-  // const spots = await Spot.findAll({
-  //   where,
-  //   limit: size,
-  //   offset: (page - 1) * size,
-  //   include: [{ model: SpotImage, where: { preview: true }, required: false }],
-  // });
-
-  // const formattedSpots = spots.map(spot => ({
-  //   id: spot.id,
-  //   ownerId: spot.ownerId,
-  //   address: spot.address,
-  //   avgRating: spot.avgRating,
-  //   city: spot.city,
-  //   state: spot.state,
-  //   country: spot.country,
-  //   lat: spot.lat,
-  //   lng: spot.lng,
-  //   name: spot.name,
-  //   description: spot.description,
-  //   price: spot.price,
-  //   createdAt: spot.createdAt,
-  //   updatedAt: spot.updatedAt,
-  //   previewImage: spot.SpotImages?.[0]?.url || null,
-  // }));
-
-  // res.json({ Spots: formattedSpots, page, size });
-
 });
 
 // // **Get All Spots Owned by the Current User**
