@@ -87,55 +87,55 @@ router.post('/', validateSignup, async (req, res, next) => {
 });
 
 // **Log In a User**
-router.post('/api/session', async (req, res, next) => {
+router.post('/', validateLogin, async (req, res, next) => {
   const { credential, password } = req.body;
 
-  // **400 Bad Request if missing fields**
+  // **1. Validate Request Body** (check if credential and password are provided)
   if (!credential || !password) {
     return res.status(400).json({
-      message: 'Bad Request', // Exact message matching the API docs
+      message: "Bad Request",
       errors: {
-        ...(credential ? {} : { credential: 'Email or username is required' }),
-        ...(password ? {} : { password: 'Password is required' }),
+        credential: !credential ? "Email or username is required" : undefined,
+        password: !password ? "Password is required" : undefined,
       },
     });
   }
 
   try {
-    // **Find user by email or username**
-    const user = await User.findOne({
+    // **2. Find User by Username or Email**
+    const user = await User.unscoped().findOne({
       where: {
-        [Op.or]: [{ email: credential }, { username: credential }],
+        [Op.or]: [{ username: credential }, { email: credential }],
       },
     });
 
-    // **401 Unauthorized if invalid credentials**
-    if (!user || !bcrypt.compareSync(password, user.hashedPassword)) {
+    // **3. Check if User Exists and Password Matches**
+    if (!user || !bcrypt.compareSync(password, user.hashedPassword.toString())) {
       return res.status(401).json({
-        message: 'Invalid credentials',
+        message: "Invalid credentials",
       });
     }
 
-    // **Prepare safe user object for response**
+    // **4. Create Safe User Object (exclude sensitive info)**
     const safeUser = {
       id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
       email: user.email,
       username: user.username,
+      firstName: user.firstName,
+      lastName: user.lastName,
     };
 
-    // **Set token cookie**
+    // **5. Set Token Cookie and Send Response**
     await setTokenCookie(res, safeUser);
 
-    // **Return successful login response**
     return res.status(200).json({ user: safeUser });
 
   } catch (error) {
-    console.error('Log-In Error:', error);
+    console.error("Login Error:", error);
+
+    // **6. Handle Unexpected Errors with a Proper Message**
     return res.status(500).json({
-      message: 'Server Error',
-      errors: error.errors || [],
+      message: "Internal Server Error",
     });
   }
 });
