@@ -9,15 +9,44 @@ const router = express.Router();
 
 // **Spot Validation Middleware**
 const validateSpot = [
-  check('address').exists({ checkFalsy: true }).withMessage('Street address is required'),
-  check('city').exists({ checkFalsy: true }).withMessage('City is required'),
-  check('state').exists({ checkFalsy: true }).withMessage('State is required'),
-  check('country').exists({ checkFalsy: true }).withMessage('Country is required'),
-  check('lat').isFloat({ min: -90, max: 90 }).withMessage('Latitude must be between -90 and 90'),
-  check('lng').isFloat({ min: -180, max: 180 }).withMessage('Longitude must be between -180 and 180'),
-  check('name').isLength({ max: 50 }).withMessage('Name must be less than 50 characters'),
-  check('price').isFloat({ min: 0 }).withMessage('Price must be a positive number'),
-  handleValidationErrors,
+  check('address')
+      .notEmpty()
+      .withMessage('Street address is required'),
+  check('city')
+      .notEmpty()
+      .withMessage('City is required'),
+  check('state')
+      .notEmpty()
+      .withMessage('State is required'),
+  check('country')
+      .notEmpty()
+      .withMessage('Country is required'),
+  check('lat')
+      .notEmpty()
+      .withMessage('Latitude is required')
+      // .bail()
+      .isFloat({ min: -90, max: 90 })
+      .withMessage('Latitude must be within -90 and 90'),
+  check('lng')
+      .notEmpty()
+      .withMessage('Longitude is required')
+      // .bail()
+      .isFloat({ min: -180, max: 180 })
+      .withMessage('Longitude must be within -180 and 180'),
+  check('name')
+      .notEmpty()
+      .withMessage('Name cannot be empty')
+      .isLength({ max: 50 })
+      .withMessage('Name must be less than 50 characters'),
+  check('description')
+      .notEmpty()
+      .withMessage('Description is required'),
+  check('price')
+      .notEmpty()
+      .withMessage('Price cannot be empty')
+      .isFloat({ gt: 0 })
+      .withMessage('Price per day must be a positive number'),
+  handleValidationErrors
 ];
 
 // **Get All Spots with Query Parameters**
@@ -305,7 +334,7 @@ router.post('/', requireAuth, validateSpot, async (req, res) => {
   const { user } = req;
   const { address, city, state, country, lat, lng, name, description, price } = req.body;
 
-  const spot = await Spot.create({
+  const NewSpot = await Spot.create({
     ownerId: user.id,
     address,
     description,
@@ -318,6 +347,8 @@ router.post('/', requireAuth, validateSpot, async (req, res) => {
     description,
     price
   });
+ 
+  let spot = await Spot.findOne ({where: {id: NewSpot.id}})
 
   res.status(201).json(spot);
 });
@@ -327,7 +358,8 @@ router.put('/:spotId', requireAuth, validateSpot, async (req, res) => {
   const { spotId } = req.params;
   const { address, city, state, country, lat, lng, name, description, price } = req.body;
 
-  const spot = await Spot.findByPk(spotId);
+  const spot = await Spot.findOne({where: {id:spotId}});
+
   if (!spot) {
     return res.status(404).json({ message: "Spot couldn't be found" });
   }
@@ -336,8 +368,8 @@ router.put('/:spotId', requireAuth, validateSpot, async (req, res) => {
     return res.status(403).json({ message: 'Forbidden' });
   }
 
-  await spot.update({ address, city, state, country, lat, lng, name, description, price });
-
+Object.assign(spot, { address, city, state, country, lat, lng, name, description, price });
+await spot.save();
   res.json(spot);
 });
 
