@@ -22,7 +22,7 @@ const validateSpot = [
 
 // **Get All Spots with Query Parameters**
 router.get('/', async (req, res) => {
-  let { page, size, minLat, maxLat, minLng, maxLng, minPrice, maxPrice } = req.query;
+  let { page, avgRating, size, minLat, maxLat, minLng, maxLng, minPrice, maxPrice } = req.query;
 
   // Query parameter validation
   const errors = {};
@@ -34,7 +34,7 @@ router.get('/', async (req, res) => {
   if (maxLng && isNaN(maxLng)) errors.maxLng = 'Maximum longitude is invalid';
   if (minPrice && (isNaN(minPrice) || minPrice < 0)) errors.minPrice = 'Minimum price must be greater than or equal to 0';
   if (maxPrice && (isNaN(maxPrice) || maxPrice < 0)) errors.maxPrice = 'Maximum price must be greater than or equal to 0';
-
+  if (avgRating )
   if (Object.keys(errors).length > 0) {
     return res.status(400).json({ message: 'Bad Request', errors });
   }
@@ -61,6 +61,7 @@ router.get('/', async (req, res) => {
     id: spot.id,
     ownerId: spot.ownerId,
     address: spot.address,
+    avgRating: spot.avgRating,
     city: spot.city,
     state: spot.state,
     country: spot.country,
@@ -71,41 +72,131 @@ router.get('/', async (req, res) => {
     price: spot.price,
     createdAt: spot.createdAt,
     updatedAt: spot.updatedAt,
-    avgRating: spot.avgRating,
     previewImage: spot.SpotImages?.[0]?.url || null,
   }));
 
   res.json({ Spots: formattedSpots, page, size });
 });
 
-// **Get All Spots Owned by the Current User**
-router.get('/current', requireAuth, async (req, res) => {
-  const { user } = req;
+// // **Get All Spots Owned by the Current User**
+// router.get('/current', requireAuth, async (req, res) => {
+//   const { user } = req;
 
-  const spots = await Spot.findAll({
-    where: { ownerId: user.id },
-    include: [{ model: SpotImage, where: { preview: true }, required: false }]
-  });
+//   const spots = await Spot.findAll({
+//     where: { ownerId: user.id },
+//   //   include: [{model: Review, attributes: ['stars'] },{ model: SpotImage, where: { preview: true }, required: false }]
+//   // });
+//   include: [{model: Review, attributes: ['stars'] },{ model:SpotImage, attributes: ['url']}]
+// });
 
-  const formattedSpots = spots.map(spot => ({
-    id: spot.id,
-    ownerId: spot.ownerId,
-    address: spot.address,
-    avgRating: spot.avgRating,
-    city: spot.city,
-    state: spot.state,
-    country: spot.country,
-    createdAt: spot.createdAt,
-    lat: spot.lat,
-    lng: spot.lng,
-    name: spot.name,
-    description: spot.description,
-    price: spot.price,
-    updatedAt: spot.updatedAt,
-    previewImage: spot.SpotImages?.[0]?.url || null
-  }));
+// const spotList = spots.map(spot => {
 
-  res.json({ Spots: formattedSpots });
+//   const spotData = spot.toJSON();
+
+//   const avgRating = spotData.Reviews && spotData.Reviews.length > 0
+
+//       ? spotData.Reviews.reduce((acc, review) => acc + review.stars, 0) / spotData.Reviews.length
+
+//       : 0;
+
+//   const previewImage = spot.SpotImages[0] ? spot.SpotImages[0].url : null;
+
+//   delete spotData.SpotImages;
+//   delete spotData.Reviews
+
+//   // combine each spot with avgRating and previewImage to create spotDetails
+
+//   return {
+//       ...spotData,
+//       avgRating,
+//       previewImage
+//   };
+// });
+
+//   const formattedSpots = spots.map(spot => ({
+//     id: spot.id,
+//     ownerId: spot.ownerId,
+//     address: spot.address,
+//     avgRating: spot.avgRating,
+//     city: spot.city,
+//     state: spot.state,
+//     country: spot.country,
+//     createdAt: spot.createdAt,
+//     lat: spot.lat,
+//     lng: spot.lng,
+//     name: spot.name,
+//     description: spot.description,
+//     price: spot.price,
+//     updatedAt: spot.updatedAt,
+//     previewImage: spot.SpotImages?.[0]?.url || null
+//   }));
+
+//   res.json({ Spots: formattedSpots });
+// });
+
+router.get('/current', requireAuth, async (req, res, next) => {
+
+  // res.send("Spots-owned-by-current-user") //* Test Route
+
+  // Get the current user
+
+  const userId = req.user.id;
+
+  try {
+
+      // Get the spots belonging to the current user
+
+      const spots = await Spot.findAll({
+
+          where: {
+              ownerId: userId
+          },
+
+          include: [
+              {
+                  model: Review,
+                  attributes: ['stars']
+              },
+              {
+                  model: SpotImage,
+                  attributes: ['url']
+              }
+          ]
+      });
+
+      // Map through each spot, calculate avgRating and fetch previewImage
+
+      const spotList = spots.map(spot => {
+
+          const spotData = spot.toJSON();
+
+          const avgRating = spotData.Reviews && spotData.Reviews.length > 0
+
+              ? spotData.Reviews.reduce((acc, review) => acc + review.stars, 0) / spotData.Reviews.length
+
+              : 0;
+
+          const previewImage = spot.SpotImages[0] ? spot.SpotImages[0].url : null;
+
+          delete spotData.SpotImages;
+          delete spotData.Reviews
+
+          // combine each spot with avgRating and previewImage to create spotDetails
+
+          return {
+              ...spotData,
+              avgRating,
+              previewImage
+          };
+      });
+
+      // return spotDetails as a json response
+
+      res.json({ Spots: spotList })
+
+  } catch (err) {
+      next(err);
+  };
 });
 
 // **Get Spot Details by ID**
@@ -275,8 +366,8 @@ router.post('/:spotId/reviews', requireAuth, async (req, res) => {
       return res.status(400).json({
         message: 'Bad Request',
         errors: {
-        "review": "Review text is required",
-        "stars": "Stars must be an integer from 1 to 5",
+        review: "Review text is required",
+        stars: "Stars must be an integer from 1 to 5",
       },
       });
     }
