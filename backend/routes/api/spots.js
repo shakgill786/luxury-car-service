@@ -69,6 +69,8 @@ router.get('/', async (req, res) => {
     name: spot.name,
     description: spot.description,
     price: spot.price,
+    createdAt: spot.createdAt,
+    updatedAt: spot.updatedAt,
     previewImage: spot.SpotImages?.[0]?.url || null,
   }));
 
