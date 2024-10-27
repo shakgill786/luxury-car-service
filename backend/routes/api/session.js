@@ -20,55 +20,61 @@ const validateLogin = [
   handleValidationErrors
 ];
 
+
 // **Log In a User**
 router.post('/', validateLogin, async (req, res, next) => {
   const { credential, password } = req.body;
 
-  // Check if credential and password are provided
+  // **1. Validate Request Body** (check if credential and password are provided)
   if (!credential || !password) {
     return res.status(400).json({
       message: "Bad Request",
       errors: {
         credential: !credential ? "Email or username is required" : undefined,
         password: !password ? "Password is required" : undefined,
-      }
+      },
     });
   }
 
   try {
+    // **2. Find User by Username or Email**
     const user = await User.unscoped().findOne({
       where: {
-        [Op.or]: [{ username: credential }, { email: credential }]
-      }
+        [Op.or]: [{ username: credential }, { email: credential }],
+      },
     });
 
-    // Invalid Credentials Handling
+    // **3. Check if User Exists and Password Matches**
     if (!user || !bcrypt.compareSync(password, user.hashedPassword.toString())) {
       return res.status(401).json({
-        message: "Invalid credentials"
+        message: "Invalid credentials",
       });
     }
 
+    // **4. Create Safe User Object (exclude sensitive info)**
     const safeUser = {
       id: user.id,
       email: user.email,
       username: user.username,
       firstName: user.firstName,
-      lastName: user.lastName
+      lastName: user.lastName,
     };
 
-    // Set Token Cookie
+    // **5. Set Token Cookie and Send Response**
     await setTokenCookie(res, safeUser);
 
-    return res.json({ user: safeUser });
-  } catch (err) {
-    // Catch any other errors and ensure a message is returned
+    return res.status(200).json({ user: safeUser });
+
+  } catch (error) {
+    console.error("Login Error:", error);
+
+    // **6. Handle Unexpected Errors with a Proper Message**
     return res.status(500).json({
       message: "Internal Server Error",
-      error: err.message
     });
   }
 });
+
 
 
 // **Log Out a User**
