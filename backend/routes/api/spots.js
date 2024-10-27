@@ -486,43 +486,40 @@ router.post('/:spotId/reviews', requireAuth, async (req, res) => {
   }
 });
 
-/**
- * GET /api/spots/:spotId/reviews
- * Fetch all reviews for a specific spot by its ID
- */
-router.get('/:spotId/reviews', async (req, res) => {
-  try {
-    const { spotId } = req.params;
+router.get('/:spotId/reviews', async (req, res, next) => {
 
-    // Check if the spot with the given ID exists
-    const spot = await Spot.findByPk(spotId);
-    if (!spot) {
-      return res.status(404).json({ message: "Spot couldn't be found" });
+    try {
+
+        const spotId = req.params.spotId;
+
+        // const spot = await Spot.findByPk(spotId);
+        const spot = await Spot.findOne({
+            where: {
+                id: spotId
+            }
+        })
+
+        if (!spot) {
+            res.status(404).json({ message: "Spot couldn't be found" })
+        }
+
+        const reviews = await Review.findAll({
+            where: {
+                spotId: spotId
+            },
+
+            include: [
+                { model: User, attributes: ['id', 'firstName', 'lastName'] },
+                { model: ReviewImage, attributes: ['id', 'url'] }
+            ]
+        });
+
+        res.status(200).json({Reviews: reviews});
+
+    } catch (err) {
+        next(err)
     }
-
-    // Fetch all reviews for the given spot ID
-    const reviews = await Review.findAll({
-      where: { spotId },
-      include: [
-        {
-          model: User,
-          attributes: ['id', 'firstName', 'lastName'],
-        },
-        {
-          model: ReviewImage,
-          attributes: ['id', 'url'],
-        },
-      ],
-    });
-
-    // Send the response with the reviews
-    res.status(200).json({ Reviews: reviews });
-  } catch (error) {
-    console.error('Error fetching spot reviews:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
-  }
 });
-
 
 
 /**

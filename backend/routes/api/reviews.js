@@ -119,67 +119,48 @@ router.delete('/:reviewId', requireAuth, async (req, res) => {
  * GET /api/reviews/current
  * Fetch all reviews of the current authenticated user
  */
-router.get('/current', requireAuth, async (req, res) => {
+router.get('/current', requireAuth, async (req, res, next) => {
   try {
-    const currentUserId = req.user.id;
+      const userId = req.user.id;
 
-    // Fetch all reviews by the current user, including associated User, Spot, and ReviewImage data
-    const reviews = await Review.findAll({
-      where: { userId: currentUserId },
-      include: [
-        {
-          model: User,
-          attributes: ['id', 'firstName', 'lastName'],
-        },
-        {
-          model: Spot,
-          attributes: [
-            'id', 'ownerId', 'address', 'city', 'state', 'country', 
-            'lat', 'lng', 'name', 'price',
-          ],
+      // Get all reviews of the current user with associated User, Spot, ReviewImage, and SpotImage
+      const reviews = await Review.findAll({
+
+          where: { userId: userId },
+
           include: [
-            {
-              model: SpotImage,
-              where: { preview: true },
-              required: false,
-              attributes: ['url'],
-            },
-          ],
-        },
-        {
-          model: ReviewImage,
-          attributes: ['id', 'url'],
-        },
-      ],
-    });
+              { model: User, attributes: ['id', 'firstName', 'lastName'] },
+              {
+                  model: Spot,
+                  attributes: [
+                      'id', 'ownerId', 'address', 'city', 'state', 'country',
+                      'lat', 'lng', 'name', 'price'
+                  ],
+                  include: [
+                      { model: SpotImage, attributes: ['url'], limit: 1 }
+                  ]
+              },
+              { model: ReviewImage, attributes: ['id', 'url'] }
+          ]
+      });
 
-    // Format reviews to include `previewImage` inside the Spot object
-    const formattedReviews = reviews.map(review => {
-      const spot = review.Spot;
-      const previewImage = spot.SpotImages?.[0]?.url || null;
+      const reviewList = reviews.map(review => {
 
-      return {
-        id: review.id,
-        userId: review.userId,
-        spotId: review.spotId,
-        review: review.review,
-        stars: review.stars,
-        createdAt: review.createdAt,
-        updatedAt: review.updatedAt,
-        User: review.User,
-        Spot: {
-          ...spot.toJSON(),
-          previewImage,
-        },
-        ReviewImages: review.ReviewImages,
-      };
-    });
+          const reviewData = review.toJSON();
 
-    // Send the response with formatted reviews
-    res.status(200).json({ Reviews: formattedReviews });
-  } catch (error) {
-    console.error('Error fetching user reviews:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
+          const previewImage = reviewData.Spot && reviewData.Spot.SpotImages.length > 0
+          ? reviewData.Spot.SpotImages[0].url
+          : null;
+
+          if (reviewData.Spot) reviewData.Spot.previewImage = previewImage;
+          if (reviewData.Spot) delete reviewData.Spot.SpotImages;
+
+          return reviewData;
+      });
+
+      res.status(200).json({ Reviews: reviewList });
+  } catch (err) {
+      next(err);
   }
 });
 
